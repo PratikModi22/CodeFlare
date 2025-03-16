@@ -1,16 +1,23 @@
 {% extends "layout.html" %}
 
-{% block title %}Server Error{% endblock %}
+{% block title %}Server Error - EcoSort{% endblock %}
 
 {% block content %}
-<div class="container text-center py-5">
-    <div class="mb-4">
-        <i class="fas fa-cogs text-danger" style="font-size: 5rem;"></i>
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 text-center">
+            <img src="https://i.imgur.com/Yc0G2L6.png" alt="Server Error" class="img-fluid mb-5" style="max-width: 300px;">
+            <h1 class="display-4 mb-4">Oops! Server Error</h1>
+            <p class="lead mb-4">Something went wrong on our servers. We're working to fix the issue as soon as possible.</p>
+            <div class="d-flex flex-wrap justify-content-center gap-3">
+                <a href="{{ url_for('index') }}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-home me-2"></i>Go Home
+                </a>
+                <a href="javascript:history.back()" class="btn btn-outline-secondary btn-lg">
+                    <i class="fas fa-arrow-left me-2"></i>Go Back
+                </a>
+            </div>
+        </div>
     </div>
-    <h1 class="display-4 mb-4">500 - Server Error</h1>
-    <p class="lead mb-4">Sorry, something went wrong on our servers. We're working to fix the issue.</p>
-    <a href="{{ url_for('index') }}" class="btn btn-primary">
-        <i class="fas fa-home me-2"></i>Return to Home
-    </a>
 </div>
 {% endblock %}

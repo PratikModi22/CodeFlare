@@ -284,8 +284,46 @@ def internal_error(error):
 
 # Initialize database
 with app.app_context():
+    # Drop and recreate all tables to ensure schema is correct
+    db.drop_all()
     db.create_all()
     logger.info("Database tables created")
+    
+    # Add some sample data
+    if User.query.count() == 0:
+        # Create admin user
+        admin = User(username="admin", email="admin@example.com")
+        admin.set_password("adminpassword")
+        admin.points = 150
+        admin.level = 2
+        
+        # Create sample recycling centers
+        center1 = RecyclingCenter(
+            name="City Recycling Center",
+            address="123 Green Street, Eco City",
+            latitude=40.7128,
+            longitude=-74.0060,
+            phone="(555) 123-4567",
+            website="https://example.com/city-recycling",
+            accepted_types="Paper, Plastic, Glass, Metal",
+            hours='{\"Monday\":\"8:00 AM - 6:00 PM\",\"Tuesday\":\"8:00 AM - 6:00 PM\",\"Wednesday\":\"8:00 AM - 6:00 PM\",\"Thursday\":\"8:00 AM - 6:00 PM\",\"Friday\":\"8:00 AM - 6:00 PM\",\"Saturday\":\"9:00 AM - 4:00 PM\",\"Sunday\":\"Closed\"}'
+        )
+        
+        center2 = RecyclingCenter(
+            name="EcoWaste Solutions",
+            address="456 Sustainability Ave, Green Village",
+            latitude=40.7282,
+            longitude=-73.9942,
+            phone="(555) 987-6543",
+            website="https://example.com/ecowaste",
+            accepted_types="Paper, Plastic, Electronics, Batteries",
+            hours='{\"Monday\":\"9:00 AM - 5:00 PM\",\"Tuesday\":\"9:00 AM - 5:00 PM\",\"Wednesday\":\"9:00 AM - 5:00 PM\",\"Thursday\":\"9:00 AM - 5:00 PM\",\"Friday\":\"9:00 AM - 5:00 PM\",\"Saturday\":\"10:00 AM - 2:00 PM\",\"Sunday\":\"Closed\"}'
+        )
+        
+        db.session.add(admin)
+        db.session.add(center1)
+        db.session.add(center2)
+        db.session.commit()
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
