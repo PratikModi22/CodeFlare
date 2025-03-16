@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block title %}Classify Waste - EcoTrack{% endblock %}
+
+{% block extra_head %}
+<!-- Additional styles for the camera interface -->
+<style>
+    .camera-controls {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .waste-category-icon {
+        width: 60px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        margin: 0 auto;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h2 class="mb-0">Waste Classification</h2>
+                </div>
+                <div class="card-body">
+                    <p class="lead mb-4">
+                        Capture an image of your waste item to identify its type and get recycling recommendations.
+                    </p>
+                    
+                    <!-- Camera Preview -->
+                    <div class="camera-preview mb-3">
+                        <video id="video-preview" autoplay playsinline></video>
+                        <img id="captured-image" style="display: none;">
+                    </div>
+                    
+                    <!-- Camera Controls -->
+                    <div class="camera-controls">
+                        <button id="capture-btn" class="btn btn-primary" disabled>
+                            <i class="fas fa-camera me-2"></i>Capture Image
+                        </button>
+                        <button id="retake-btn" class="btn btn-secondary" style="display: none;">
+                            <i class="fas fa-redo me-2"></i>Retake
+                        </button>
+                        <button id="classify-btn" class="btn btn-success" style="display: none;">
+                            <i class="fas fa-check me-2"></i>Classify
+                        </button>
+                    </div>
+                    
+                    <!-- Manual Classification (Fallback) -->
+                    <div id="manual-classification" class="mt-4" style="display: none;">
+                        <hr>
+                        <h5 class="mb-3">Manual Classification</h5>
+                        <form id="manual-classify-form">
+                            <div class="mb-3">
+                                <label for="manual-category" class="form-label">Select Waste Category</label>
+                                <select class="form-select" id="manual-category" name="category_id" required>
+                                    <option value="" selected disabled>Select waste type...</option>
+                                    {% for category in categories %}
+                                    <option value="{{ category.id }}">{{ category.name }} - {{ category.description }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-check me-2"></i>Classify
+                            </button>
+                        </form>
+                    </div>
+                    
+                    <!-- Additional Information -->
+                    <div class="mt-4">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="waste-quantity" class="form-label">Estimated Quantity (kg)</label>
+                                    <input type="number" class="form-control" id="waste-quantity" min="0.1" step="0.1" value="1.0">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check mt-4">
+                                    <input class="form-check-input" type="checkbox" id="disposed-properly" checked>
+                                    <label class="form-check-label" for="disposed-properly">
+                                        I disposed of this waste properly
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Classification Results -->
+            <div id="loading-spinner" class="text-center py-4" style="display: none;">
+                <div class="spinner-border text-primary loading-spinner" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-3">Analyzing waste image...</p>
+            </div>
+            
+            <div id="classification-result" class="mb-4" style="display: none;"></div>
+            
+            <!-- Waste Categories Guide -->
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h4 class="mb-0">Waste Categories Guide</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        {% for category in categories %}
+                        <div class="col-md-6 col-lg-3">
+                            <div class="text-center mb-3">
+                                <div class="waste-category-icon waste-{{ category.name.lower() }} mb-2">
+                                    <i class="fas fa-trash-alt"></i>
+                                </div>
+                                <h5>{{ category.name }}</h5>
+                                <span class="badge {% if category.recyclable %}bg-success{% else %}bg-danger{% endif %}">
+                                    {% if category.recyclable %}Recyclable{% else %}Non-recyclable{% endif %}
+                                </span>
+                                <p class="small mt-2">{{ category.description }}</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/waste_classification.js') }}"></script>
+{% endblock %}

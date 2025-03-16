@@ -1,0 +1,201 @@
+/* Custom styles for Waste Management App */
+
+/* SDG Colors */
+:root {
+  --sdg-11: #F99D26;  /* SDG 11 - Sustainable Cities and Communities */
+  --sdg-12: #CF8D2A;  /* SDG 12 - Responsible Consumption and Production */
+  --sdg-13: #48773E;  /* SDG 13 - Climate Action */
+}
+
+/* SDG badges */
+.sdg-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  color: white;
+  font-weight: bold;
+  margin-right: 10px;
+}
+
+.sdg-11 {
+  background-color: var(--sdg-11);
+}
+
+.sdg-12 {
+  background-color: var(--sdg-12);
+}
+
+.sdg-13 {
+  background-color: var(--sdg-13);
+}
+
+/* Card styles */
+.card {
+  transition: transform 0.3s ease;
+  margin-bottom: 20px;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+}
+
+/* Feature icon */
+.feature-icon {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  margin-bottom: 1rem;
+}
+
+/* Achievement badges */
+.badge-card {
+  text-align: center;
+  padding: 15px;
+  border-radius: 10px;
+  margin-bottom: 15px;
+}
+
+.badge-icon {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 2rem;
+}
+
+/* Camera preview */
+.camera-preview {
+  width: 100%;
+  max-width: 500px;
+  height: 300px;
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: var(--bs-dark);
+  margin: 0 auto;
+}
+
+#video-preview, #captured-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Map styles */
+#map-container {
+  height: 500px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Carbon impact visualization */
+.carbon-impact {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 20px;
+}
+
+.carbon-icon {
+  font-size: 3rem;
+  margin-bottom: 10px;
+}
+
+.carbon-value {
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+/* Waste category colors */
+.waste-plastic {
+  background-color: #3498db;
+}
+
+.waste-paper {
+  background-color: #f1c40f;
+}
+
+.waste-glass {
+  background-color: #1abc9c;
+}
+
+.waste-metal {
+  background-color: #7f8c8d;
+}
+
+.waste-organic {
+  background-color: #2ecc71;
+}
+
+.waste-electronic {
+  background-color: #9b59b6;
+}
+
+.waste-hazardous {
+  background-color: #e74c3c;
+}
+
+.waste-nonrecyclable {
+  background-color: #34495e;
+}
+
+/* Points display */
+.points-display {
+  background-color: var(--bs-primary);
+  color: white;
+  padding: 8px 15px;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* Spinner for loading states */
+.loading-spinner {
+  width: 3rem;
+  height: 3rem;
+}
+
+/* Custom animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease-in;
+}
+
+/* Carbon footprint tracker styles */
+.carbon-tracker {
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+.carbon-tracker-value {
+  font-size: 2.5rem;
+  font-weight: bold;
+}
+
+.carbon-tracker-label {
+  font-size: 1rem;
+  opacity: 0.8;
+}
+
+/* Custom styles for notifications */
+.toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1050;
+}

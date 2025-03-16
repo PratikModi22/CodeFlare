@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics Dashboard - EcoTrack{% endblock %}
+
+{% block extra_head %}
+<style>
+    .stats-card {
+        min-height: 180px;
+    }
+    
+    .chart-container {
+        height: 350px;
+        position: relative;
+    }
+    
+    .badge-progress {
+        height: 5px;
+        background-color: var(--bs-gray-600);
+        border-radius: 3px;
+        overflow: hidden;
+        margin-top: 5px;
+    }
+    
+    .badge-progress-bar {
+        height: 100%;
+        background-color: var(--bs-primary);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Analytics Dashboard</h1>
+    
+    <!-- User Stats Summary -->
+    <section id="user-stats" class="mb-5">
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card bg-primary text-white h-100">
+                    <div class="card-body text-center stats-card">
+                        <i class="fas fa-recycle fa-3x mb-3"></i>
+                        <h5 class="card-title">Total Waste Managed</h5>
+                        <p class="card-text display-5">{{ total_waste|default(0, true)|round(2) }} kg</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card bg-success text-white h-100">
+                    <div class="card-body text-center stats-card">
+                        <i class="fas fa-leaf fa-3x mb-3"></i>
+                        <h5 class="card-title">Carbon Footprint Reduced</h5>
+                        <p class="card-text display-5">{{ total_carbon_saved|default(0, true)|round(2) }} kg</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card bg-info text-white h-100">
+                    <div class="card-body text-center stats-card">
+                        <i class="fas fa-trophy fa-3x mb-3"></i>
+                        <h5 class="card-title">Achievement Score</h5>
+                        <p class="card-text display-5">{{ total_points|default(0, true) }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Charts Section -->
+    <section class="mb-5">
+        <div class="row g-4">
+            <!-- Waste by Category Chart -->
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Waste by Category</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="waste-category-chart" class="chart-container" data-waste='{{ waste_by_category|tojson }}'>
+                            <!-- Chart will be rendered here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Carbon Impact Chart -->
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">Carbon Impact Over Time</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="carbon-impact-chart" class="chart-container" data-carbon='{{ carbon_impact_over_time|tojson }}'>
+                            <!-- Chart will be rendered here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Points Chart -->
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">Points Progress</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="points-chart" class="chart-container" data-points='{{ points_over_time|tojson }}'>
+                            <!-- Chart will be rendered here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Carbon Footprint Tracker -->
+    <section class="mb-5">
+        <h2 class="mb-4">Carbon Footprint Tracker</h2>
+        <div id="carbon-tracker" data-carbon='{"total_savings": {{ total_carbon_saved|default(0, true) }}}'>
+            <!-- Carbon tracker will be populated dynamically -->
+        </div>
+    </section>
+    
+    <!-- Environmental Impact Visualization -->
+    <section class="mb-5">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">Environmental Impact Visualization</h5>
+            </div>
+            <div class="card-body">
+                <div id="impact-visualization" data-carbon="{{ total_carbon_saved|default(0, true) }}">
+                    <!-- Impact visualization will be populated dynamically -->
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Badges Section -->
+    <section class="mb-5">
+        <h2 class="mb-4">Your Achievements</h2>
+        <div id="badges-container" data-badges='{{ user_badges|tojson }}'>
+            <!-- Badges will be populated dynamically -->
+        </div>
+    </section>
+    
+    <!-- Community Leaderboard -->
+    <section class="mb-5">
+        <h2 class="mb-4">Community Leaderboard</h2>
+        <div id="leaderboard-container">
+            <!-- Leaderboard will be populated dynamically -->
+        </div>
+    </section>
+    
+    <!-- Next Steps Section -->
+    <section class="mb-5">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Next Steps</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <i class="fas fa-camera fa-3x mb-3 text-primary"></i>
+                            <h5>Classify More Waste</h5>
+                            <p>Contribute to your environmental impact by classifying more waste items.</p>
+                            <a href="/classify" class="btn btn-outline-primary">
+                                <i class="fas fa-camera me-2"></i>Classify Waste
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <i class="fas fa-map-marker-alt fa-3x mb-3 text-success"></i>
+                            <h5>Find Recycling Centers</h5>
+                            <p>Locate nearby recycling centers to properly dispose of your waste.</p>
+                            <a href="/map" class="btn btn-outline-success">
+                                <i class="fas fa-map-marker-alt me-2"></i>View Map
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <i class="fas fa-share-alt fa-3x mb-3 text-info"></i>
+                            <h5>Spread Awareness</h5>
+                            <p>Share your impact with friends and encourage sustainable practices.</p>
+                            <button class="btn btn-outline-info">
+                                <i class="fas fa-share-alt me-2"></i>Share Impact
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/analytics.js') }}"></script>
+<script src="{{ url_for('static', filename='js/carbon_tracker.js') }}"></script>
+<script src="{{ url_for('static', filename='js/gamification.js') }}"></script>
+{% endblock %}

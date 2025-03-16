@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+
+{% block title %}EcoTrack - Sustainable Waste Management{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Hero Section -->
+    <section class="py-5">
+        <div class="row align-items-center g-5">
+            <div class="col-md-6">
+                <h1 class="display-4 fw-bold mb-4">Sustainable Waste Management for a Better Planet</h1>
+                <p class="lead mb-4">EcoTrack helps you classify waste, locate recycling centers, and track your environmental impact in alignment with UN Sustainable Development Goals.</p>
+                <div class="d-flex flex-wrap gap-2 mb-4">
+                    <div class="sdg-badge sdg-11">11</div>
+                    <div class="sdg-badge sdg-12">12</div>
+                    <div class="sdg-badge sdg-13">13</div>
+                </div>
+                <div class="d-grid gap-2 d-md-flex">
+                    {% if current_user.is_authenticated %}
+                        <a href="/classify" class="btn btn-primary btn-lg px-4">
+                            <i class="fas fa-camera me-2"></i>Classify Waste
+                        </a>
+                        <a href="/map" class="btn btn-outline-primary btn-lg px-4">
+                            <i class="fas fa-map-marker-alt me-2"></i>Find Recycling Centers
+                        </a>
+                    {% else %}
+                        <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg px-4">
+                            <i class="fas fa-user-plus me-2"></i>Join Now
+                        </a>
+                        <a href="{{ url_for('auth.login') }}" class="btn btn-outline-primary btn-lg px-4">
+                            <i class="fas fa-sign-in-alt me-2"></i>Login
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="text-center">
+                    <svg width="400" height="300" viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Earth illustration -->
+                        <circle cx="300" cy="200" r="150" fill="#1e3a8a" />
+                        <path d="M300,50 C380,50 450,120 450,200 C450,280 380,350 300,350 C260,350 220,335 190,310 C160,285 145,250 145,210 C145,170 160,135 190,110 C220,85 260,50 300,50 Z" fill="#48773E" />
+                        <path d="M300,50 C260,50 220,65 190,90 C160,115 130,150 130,200 C130,250 160,285 190,310 C220,335 260,350 300,350 C340,350 380,335 410,310 C380,330 320,280 300,220 C280,160 320,110 350,90 C320,65 340,50 300,50 Z" fill="#2ecc71" />
+
+                        <!-- Recycling symbol -->
+                        <g transform="translate(300, 200) scale(0.8)">
+                            <path d="M0,-60 L-20,-20 L0,-30 L20,-20 Z" fill="#ffffff" />
+                            <path d="M52,30 L12,30 L22,10 L32,30 Z" fill="#ffffff" />
+                            <path d="M-52,30 L-12,30 L-22,50 L-32,30 Z" fill="#ffffff" />
+                            <path d="M0,-40 L-10,-20 L0,-25 L10,-20 Z M35,20 L15,20 L20,10 L25,20 Z M-35,20 L-15,20 L-20,30 L-25,20 Z" fill="#1e3a8a" />
+                            
+                            <!-- Arrows -->
+                            <path d="M0,-20 C20,-20 40,0 40,20 L30,20 C30,5 15,-10 0,-10 Z" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+                            <path d="M34.6,25 C24.6,40 5,45 -15,35 L-10,25 C5,32 20,30 25,20 Z" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+                            <path d="M-34.6,25 C-24.6,10 -5,-5 15,5 L10,15 C-5,8 -15,15 -20,25 Z" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+                        </g>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SDGs Section -->
+    <section class="py-5">
+        <h2 class="text-center mb-5">Supporting UN Sustainable Development Goals</h2>
+        <div class="row g-4">
+            {% for sdg, info in sdg_info.items() %}
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body text-center p-4">
+                        <div class="sdg-badge {{ sdg }} mx-auto mb-3" style="width: 60px; height: 60px; font-size: 1.5rem;">
+                            {{ sdg[-2:] }}
+                        </div>
+                        <h3 class="card-title">{{ info.title }}</h3>
+                        <p class="card-text">{{ info.description }}</p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="py-5">
+        <h2 class="text-center mb-5">Key Features</h2>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body p-4">
+                        <div class="feature-icon bg-primary text-white mx-auto">
+                            <i class="fas fa-camera"></i>
+                        </div>
+                        <h3 class="card-title text-center">Waste Classification</h3>
+                        <p class="card-text">Use your camera to capture and classify waste items. Get recommendations on proper disposal methods based on AI-powered image recognition.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body p-4">
+                        <div class="feature-icon bg-success text-white mx-auto">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                        <h3 class="card-title text-center">Recycling Map</h3>
+                        <p class="card-text">Find nearby recycling centers and waste disposal facilities. Get directions and information about accepted waste types and operating hours.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body p-4">
+                        <div class="feature-icon bg-info text-white mx-auto">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <h3 class="card-title text-center">Impact Analytics</h3>
+                        <p class="card-text">Track your waste management efforts and environmental impact. Visualize your contribution to carbon reduction and earn badges for sustainable actions.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {% if current_user.is_authenticated %}
+    <!-- Carbon Footprint Tracker -->
+    <section class="py-5">
+        <div class="card bg-success text-white">
+            <div class="card-body p-4">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h3 class="mb-3">Your Carbon Footprint</h3>
+                        <p class="lead mb-4">You've saved approximately <strong>{{ current_user.carbon_saved|round(1) }} kg</strong> of CO2 through responsible waste management.</p>
+                        <p>Continue tracking your impact by classifying and properly disposing of waste.</p>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <i class="fas fa-leaf fa-5x mb-2"></i>
+                        <div class="mt-2">
+                            <a href="/analytics" class="btn btn-light">
+                                <i class="fas fa-chart-line me-2"></i>View Detailed Analytics
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Getting Started Section -->
+    <section class="py-5">
+        <h2 class="text-center mb-5">How It Works</h2>
+        <div class="row g-4">
+            <div class="col-md-3">
+                <div class="card h-100">
+                    <div class="card-body text-center p-4">
+                        <div class="rounded-circle bg-primary text-white mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                            <h3 class="mb-0">1</h3>
+                        </div>
+                        <h4>Capture</h4>
+                        <p>Take a photo of your waste item using the app</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card h-100">
+                    <div class="card-body text-center p-4">
+                        <div class="rounded-circle bg-primary text-white mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                            <h3 class="mb-0">2</h3>
+                        </div>
+                        <h4>Classify</h4>
+                        <p>Our AI identifies the waste type and proper disposal method</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card h-100">
+                    <div class="card-body text-center p-4">
+                        <div class="rounded-circle bg-primary text-white mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                            <h3 class="mb-0">3</h3>
+                        </div>
+                        <h4>Locate</h4>
+                        <p>Find the nearest appropriate recycling or disposal center</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card h-100">
+                    <div class="card-body text-center p-4">
+                        <div class="rounded-circle bg-primary text-white mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                            <h3 class="mb-0">4</h3>
+                        </div>
+                        <h4>Track</h4>
+                        <p>Monitor your environmental impact and earn rewards</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="text-center mt-5">
+            {% if current_user.is_authenticated %}
+                <a href="/classify" class="btn btn-primary btn-lg">
+                    <i class="fas fa-camera me-2"></i>Start Classifying Waste
+                </a>
+            {% else %}
+                <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-user-plus me-2"></i>Get Started
+                </a>
+            {% endif %}
+        </div>
+    </section>
+</div>
+{% endblock %}
