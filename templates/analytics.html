@@ -1,204 +1,278 @@
-{% extends "base.html" %}
+{% extends 'layout.html' %}
 
 {% block title %}Analytics Dashboard - EcoTrack{% endblock %}
 
-{% block extra_head %}
-<style>
-    .stats-card {
-        min-height: 180px;
-    }
-    
-    .chart-container {
-        height: 350px;
-        position: relative;
-    }
-    
-    .badge-progress {
-        height: 5px;
-        background-color: var(--bs-gray-600);
-        border-radius: 3px;
-        overflow: hidden;
-        margin-top: 5px;
-    }
-    
-    .badge-progress-bar {
-        height: 100%;
-        background-color: var(--bs-primary);
-    }
-</style>
-{% endblock %}
-
 {% block content %}
-<div class="container">
-    <h1 class="mb-4">Analytics Dashboard</h1>
-    
-    <!-- User Stats Summary -->
-    <section id="user-stats" class="mb-5">
-        <div class="row g-4">
-            <div class="col-md-4">
-                <div class="card bg-primary text-white h-100">
-                    <div class="card-body text-center stats-card">
-                        <i class="fas fa-recycle fa-3x mb-3"></i>
-                        <h5 class="card-title">Total Waste Managed</h5>
-                        <p class="card-text display-5">{{ total_waste|default(0, true)|round(2) }} kg</p>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-md-4">
-                <div class="card bg-success text-white h-100">
-                    <div class="card-body text-center stats-card">
-                        <i class="fas fa-leaf fa-3x mb-3"></i>
-                        <h5 class="card-title">Carbon Footprint Reduced</h5>
-                        <p class="card-text display-5">{{ total_carbon_saved|default(0, true)|round(2) }} kg</p>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-md-4">
-                <div class="card bg-info text-white h-100">
-                    <div class="card-body text-center stats-card">
-                        <i class="fas fa-trophy fa-3x mb-3"></i>
-                        <h5 class="card-title">Achievement Score</h5>
-                        <p class="card-text display-5">{{ total_points|default(0, true) }}</p>
-                    </div>
-                </div>
+<div class="page-header">
+    <h1><i class="fas fa-chart-bar me-2 text-primary"></i>Analytics Dashboard</h1>
+    <p class="lead">Track your waste disposal trends and environmental impact.</p>
+</div>
+
+<div id="analytics-alerts"></div>
+
+<div class="mb-4 text-end">
+    <button id="refresh-btn" class="btn btn-outline-info">
+        <i class="fas fa-sync-alt me-2"></i>Refresh Data
+    </button>
+</div>
+
+<div class="row mb-4" id="analytics-summary">
+    <div class="col-md-3 mb-3">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <i class="fas fa-camera text-info fa-3x mb-3"></i>
+                <h3>{{ user_waste_logs }}</h3>
+                <p class="text-muted">Waste Items Classified</p>
             </div>
         </div>
-    </section>
-    
-    <!-- Charts Section -->
-    <section class="mb-5">
-        <div class="row g-4">
-            <!-- Waste by Category Chart -->
-            <div class="col-md-6">
-                <div class="card h-100">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0">Waste by Category</h5>
-                    </div>
-                    <div class="card-body">
-                        <div id="waste-category-chart" class="chart-container" data-waste='{{ waste_by_category|tojson }}'>
-                            <!-- Chart will be rendered here -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Carbon Impact Chart -->
-            <div class="col-md-6">
-                <div class="card h-100">
-                    <div class="card-header bg-success text-white">
-                        <h5 class="mb-0">Carbon Impact Over Time</h5>
-                    </div>
-                    <div class="card-body">
-                        <div id="carbon-impact-chart" class="chart-container" data-carbon='{{ carbon_impact_over_time|tojson }}'>
-                            <!-- Chart will be rendered here -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Points Chart -->
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header bg-info text-white">
-                        <h5 class="mb-0">Points Progress</h5>
-                    </div>
-                    <div class="card-body">
-                        <div id="points-chart" class="chart-container" data-points='{{ points_over_time|tojson }}'>
-                            <!-- Chart will be rendered here -->
-                        </div>
-                    </div>
-                </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <i class="fas fa-recycle text-success fa-3x mb-3"></i>
+                <h3>{{ user_recycling|length }}</h3>
+                <p class="text-muted">Recycling Activities</p>
             </div>
         </div>
-    </section>
-    
-    <!-- Carbon Footprint Tracker -->
-    <section class="mb-5">
-        <h2 class="mb-4">Carbon Footprint Tracker</h2>
-        <div id="carbon-tracker" data-carbon='{"total_savings": {{ total_carbon_saved|default(0, true) }}}'>
-            <!-- Carbon tracker will be populated dynamically -->
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <i class="fas fa-trophy text-warning fa-3x mb-3"></i>
+                <h3>{{ total_points }}</h3>
+                <p class="text-muted">Total Points Earned</p>
+            </div>
         </div>
-    </section>
-    
-    <!-- Environmental Impact Visualization -->
-    <section class="mb-5">
-        <div class="card">
-            <div class="card-header bg-success text-white">
-                <h5 class="mb-0">Environmental Impact Visualization</h5>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <i class="fas fa-leaf text-success fa-3x mb-3"></i>
+                <h3>{{ total_carbon_saved|round(2) }}</h3>
+                <p class="text-muted">kg CO2 Saved</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card h-100" id="waste-distribution-container">
+            <div class="card-header bg-dark">
+                <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Waste Type Distribution</h5>
             </div>
             <div class="card-body">
-                <div id="impact-visualization" data-carbon="{{ total_carbon_saved|default(0, true) }}">
-                    <!-- Impact visualization will be populated dynamically -->
+                {% if waste_types %}
+                <!-- Hidden data for chart -->
+                {% for waste_type, count in waste_types.items() %}
+                <div class="waste-type-item d-none" data-type="{{ waste_type }}" data-count="{{ count }}"></div>
+                {% endfor %}
+                
+                <canvas id="waste-distribution-chart" height="300"></canvas>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>No waste data available yet. Start classifying waste to see your distribution.
                 </div>
+                {% endif %}
             </div>
         </div>
-    </section>
+    </div>
     
-    <!-- Badges Section -->
-    <section class="mb-5">
-        <h2 class="mb-4">Your Achievements</h2>
-        <div id="badges-container" data-badges='{{ user_badges|tojson }}'>
-            <!-- Badges will be populated dynamically -->
-        </div>
-    </section>
-    
-    <!-- Community Leaderboard -->
-    <section class="mb-5">
-        <h2 class="mb-4">Community Leaderboard</h2>
-        <div id="leaderboard-container">
-            <!-- Leaderboard will be populated dynamically -->
-        </div>
-    </section>
-    
-    <!-- Next Steps Section -->
-    <section class="mb-5">
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">Next Steps</h5>
+    <div class="col-md-6 mb-4">
+        <div class="card h-100" id="carbon-savings-container">
+            <div class="card-header bg-dark">
+                <h5 class="mb-0"><i class="fas fa-leaf me-2"></i>Carbon Savings (Last 7 Days)</h5>
             </div>
             <div class="card-body">
-                <div class="row g-4">
+                {% if carbon_data %}
+                <!-- Hidden data for chart -->
+                {% for data in carbon_data %}
+                <div class="carbon-data-item d-none" data-date="{{ data.date }}" data-carbon="{{ data.carbon_saved }}"></div>
+                {% endfor %}
+                
+                <canvas id="carbon-savings-chart" height="300"></canvas>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>No carbon savings data available yet. Start recycling to track your impact.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4" id="leaderboard-container">
+    <div class="card-header bg-dark">
+        <h5 class="mb-0"><i class="fas fa-trophy me-2"></i>Leaderboard</h5>
+    </div>
+    <div class="card-body">
+        <ul class="nav nav-pills mb-3" id="leaderboardTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="points-tab" data-bs-toggle="pill" data-bs-target="#points-leaderboard" type="button" role="tab" aria-controls="points-leaderboard" aria-selected="true" data-leaderboard="points">
+                    <i class="fas fa-star me-1"></i> Points
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="carbon-tab" data-bs-toggle="pill" data-bs-target="#carbon-leaderboard" type="button" role="tab" aria-controls="carbon-leaderboard" aria-selected="false" data-leaderboard="carbon">
+                    <i class="fas fa-leaf me-1"></i> Carbon Saved
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="recycling-tab" data-bs-toggle="pill" data-bs-target="#recycling-leaderboard" type="button" role="tab" aria-controls="recycling-leaderboard" aria-selected="false" data-leaderboard="recycling">
+                    <i class="fas fa-recycle me-1"></i> Recycling Count
+                </button>
+            </li>
+        </ul>
+        
+        <div class="tab-content" id="leaderboardTabContent">
+            <div class="tab-pane fade show active" id="points-leaderboard" role="tabpanel" aria-labelledby="points-tab">
+                {% if leaderboard %}
+                <!-- Hidden data for chart -->
+                {% for user in leaderboard %}
+                <div class="leaderboard-item d-none" 
+                     data-username="{{ user.username }}" 
+                     data-points="{{ user.points }}"
+                     data-avatar=""
+                     {% if user.id == current_user.id %}data-is-current-user="true"{% endif %}>
+                </div>
+                {% endfor %}
+                
+                <div class="row">
                     <div class="col-md-4">
-                        <div class="text-center">
-                            <i class="fas fa-camera fa-3x mb-3 text-primary"></i>
-                            <h5>Classify More Waste</h5>
-                            <p>Contribute to your environmental impact by classifying more waste items.</p>
-                            <a href="/classify" class="btn btn-outline-primary">
-                                <i class="fas fa-camera me-2"></i>Classify Waste
-                            </a>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Rank</th>
+                                        <th scope="col">User</th>
+                                        <th scope="col">Points</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for user in leaderboard %}
+                                    <tr {% if user.id == current_user.id %}class="table-primary"{% endif %}>
+                                        <td class="text-center">
+                                            {% if loop.index == 1 %}
+                                            <div class="position-medal gold"><i class="fas fa-medal"></i></div>
+                                            {% elif loop.index == 2 %}
+                                            <div class="position-medal silver"><i class="fas fa-medal"></i></div>
+                                            {% elif loop.index == 3 %}
+                                            <div class="position-medal bronze"><i class="fas fa-medal"></i></div>
+                                            {% else %}
+                                            {{ loop.index }}
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ user.username }}</td>
+                                        <td>
+                                            <span class="badge bg-success rounded-pill">
+                                                <i class="fas fa-trophy"></i> {{ user.points }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
-                    <div class="col-md-4">
-                        <div class="text-center">
-                            <i class="fas fa-map-marker-alt fa-3x mb-3 text-success"></i>
-                            <h5>Find Recycling Centers</h5>
-                            <p>Locate nearby recycling centers to properly dispose of your waste.</p>
-                            <a href="/map" class="btn btn-outline-success">
-                                <i class="fas fa-map-marker-alt me-2"></i>View Map
-                            </a>
+                    <div class="col-md-8">
+                        <canvas id="leaderboard-chart" height="300"></canvas>
+                    </div>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>No leaderboard data available yet.
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="tab-pane fade" id="carbon-leaderboard" role="tabpanel" aria-labelledby="carbon-tab">
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading carbon savings leaderboard...</p>
+                </div>
+            </div>
+            
+            <div class="tab-pane fade" id="recycling-leaderboard" role="tabpanel" aria-labelledby="recycling-tab">
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading recycling count leaderboard...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-dark">
+                <h5 class="mb-0"><i class="fas fa-tasks me-2"></i>Waste Management Metrics</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <div class="card bg-dark h-100">
+                            <div class="card-body text-center">
+                                <h6 class="text-muted mb-3">Average Weekly Waste</h6>
+                                <h3 class="mb-0">{{ (user_waste_logs / 7)|round(1) }} items</h3>
+                                <div class="mt-3">
+                                    <div class="progress" style="height: 5px;">
+                                        <div class="progress-bar bg-info" role="progressbar" style="width: {{ min(100, (user_waste_logs / 7) * 10) }}%;" aria-valuenow="{{ (user_waste_logs / 7)|round(1) }}" aria-valuemin="0" aria-valuemax="10"></div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="col-md-4">
-                        <div class="text-center">
-                            <i class="fas fa-share-alt fa-3x mb-3 text-info"></i>
-                            <h5>Spread Awareness</h5>
-                            <p>Share your impact with friends and encourage sustainable practices.</p>
-                            <button class="btn btn-outline-info">
-                                <i class="fas fa-share-alt me-2"></i>Share Impact
-                            </button>
+                    <div class="col-md-4 mb-3">
+                        <div class="card bg-dark h-100">
+                            <div class="card-body text-center">
+                                <h6 class="text-muted mb-3">Recycling Rate</h6>
+                                {% set total_items = user_waste_logs %}
+                                {% set recycled_items = user_recycling|length %}
+                                {% if total_items > 0 %}
+                                    {% set recycling_rate = (recycled_items / total_items * 100)|round|int %}
+                                {% else %}
+                                    {% set recycling_rate = 0 %}
+                                {% endif %}
+                                <h3 class="mb-0">{{ recycling_rate }}%</h3>
+                                <div class="mt-3">
+                                    <div class="progress" style="height: 5px;">
+                                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ recycling_rate }}%;" aria-valuenow="{{ recycling_rate }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card bg-dark h-100">
+                            <div class="card-body text-center">
+                                <h6 class="text-muted mb-3">Points per Item</h6>
+                                {% if total_items > 0 %}
+                                    {% set points_per_item = (total_points / total_items)|round|int %}
+                                {% else %}
+                                    {% set points_per_item = 0 %}
+                                {% endif %}
+                                <h3 class="mb-0">{{ points_per_item }}</h3>
+                                <div class="mt-3">
+                                    <div class="progress" style="height: 5px;">
+                                        <div class="progress-bar bg-warning" role="progressbar" style="width: {{ min(100, points_per_item * 5) }}%;" aria-valuenow="{{ points_per_item }}" aria-valuemin="0" aria-valuemax="20"></div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </section>
+    </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/analytics.js') }}"></script>
-<script src="{{ url_for('static', filename='js/carbon_tracker.js') }}"></script>
 <script src="{{ url_for('static', filename='js/gamification.js') }}"></script>
 {% endblock %}

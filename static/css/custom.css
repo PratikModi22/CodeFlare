@@ -1,201 +1,295 @@
-/* Custom styles for Waste Management App */
+/* Custom styles for the EcoTrack Waste Management App */
 
-/* SDG Colors */
-:root {
-  --sdg-11: #F99D26;  /* SDG 11 - Sustainable Cities and Communities */
-  --sdg-12: #CF8D2A;  /* SDG 12 - Responsible Consumption and Production */
-  --sdg-13: #48773E;  /* SDG 13 - Climate Action */
+/* Global styles */
+body {
+    font-family: 'Roboto', sans-serif;
+    transition: all 0.3s ease;
 }
 
-/* SDG badges */
-.sdg-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  color: white;
-  font-weight: bold;
-  margin-right: 10px;
+.navbar-brand {
+    font-weight: 700;
+}
+
+.eco-icon {
+    color: var(--bs-success);
+}
+
+.page-header {
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Cards with hover effect */
+.feature-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border-left: 4px solid var(--bs-success);
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* SDG Goals Styling */
+.sdg-card {
+    height: 100%;
+    transition: transform 0.3s ease;
+}
+
+.sdg-card:hover {
+    transform: scale(1.02);
+}
+
+.sdg-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
 }
 
 .sdg-11 {
-  background-color: var(--sdg-11);
+    border-left: 4px solid #fd9d24;
+}
+
+.sdg-11 .sdg-icon {
+    color: #fd9d24;
 }
 
 .sdg-12 {
-  background-color: var(--sdg-12);
+    border-left: 4px solid #bf8b2e;
+}
+
+.sdg-12 .sdg-icon {
+    color: #bf8b2e;
 }
 
 .sdg-13 {
-  background-color: var(--sdg-13);
+    border-left: 4px solid #3f7e44;
 }
 
-/* Card styles */
-.card {
-  transition: transform 0.3s ease;
-  margin-bottom: 20px;
+.sdg-13 .sdg-icon {
+    color: #3f7e44;
 }
 
-.card:hover {
-  transform: translateY(-5px);
+/* Waste Classification Page */
+#drop-area {
+    border: 2px dashed var(--bs-info);
+    border-radius: 0.5rem;
+    padding: 2rem;
+    text-align: center;
+    transition: all 0.3s ease;
 }
 
-/* Feature icon */
-.feature-icon {
-  width: 64px;
-  height: 64px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  margin-bottom: 1rem;
+#drop-area.highlight {
+    border-color: var(--bs-success);
+    background-color: rgba(40, 167, 69, 0.1);
 }
 
-/* Achievement badges */
-.badge-card {
-  text-align: center;
-  padding: 15px;
-  border-radius: 10px;
-  margin-bottom: 15px;
+.preview-container {
+    max-width: 100%;
+    overflow: hidden;
+    border-radius: 0.5rem;
+    margin-top: 1rem;
 }
 
-.badge-icon {
-  width: 80px;
-  height: 80px;
-  margin: 0 auto 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  font-size: 2rem;
+#image-preview {
+    max-width: 100%;
+    max-height: 300px;
+    border-radius: 0.5rem;
 }
 
-/* Camera preview */
-.camera-preview {
-  width: 100%;
-  max-width: 500px;
-  height: 300px;
-  border-radius: 8px;
-  overflow: hidden;
-  background-color: var(--bs-dark);
-  margin: 0 auto;
+/* Waste Map Styles */
+#map {
+    height: 500px;
+    width: 100%;
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
 }
 
-#video-preview, #captured-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.recycling-center-card {
+    transition: all 0.3s ease;
 }
 
-/* Map styles */
-#map-container {
-  height: 500px;
-  border-radius: 8px;
-  overflow: hidden;
+.recycling-center-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
-/* Carbon impact visualization */
-.carbon-impact {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  padding: 20px;
+.position-medal {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    font-weight: bold;
 }
 
-.carbon-icon {
-  font-size: 3rem;
-  margin-bottom: 10px;
+.gold {
+    background-color: #ffd700;
+    color: #000;
 }
 
-.carbon-value {
-  font-size: 2rem;
-  font-weight: bold;
+.silver {
+    background-color: #c0c0c0;
+    color: #000;
 }
 
-/* Waste category colors */
-.waste-plastic {
-  background-color: #3498db;
+.bronze {
+    background-color: #cd7f32;
+    color: #000;
 }
 
-.waste-paper {
-  background-color: #f1c40f;
+/* Carbon Tracker Styles */
+.impact-card {
+    transition: all 0.3s ease;
+    border-radius: 0.5rem;
+    overflow: hidden;
 }
 
-.waste-glass {
-  background-color: #1abc9c;
+.impact-icon {
+    font-size: 2rem;
+    margin-bottom: 1rem;
 }
 
-.waste-metal {
-  background-color: #7f8c8d;
+.impact-value {
+    font-size: 2rem;
+    font-weight: 700;
 }
 
-.waste-organic {
-  background-color: #2ecc71;
+/* Achievement Badges */
+.achievement-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    margin: 0 auto 1rem;
+    background-color: var(--bs-dark);
+    color: var(--bs-warning);
+    border: 3px solid var(--bs-warning);
+    transition: all 0.3s ease;
+    animation: fadeIn 0.5s ease-out forwards;
 }
 
-.waste-electronic {
-  background-color: #9b59b6;
+.achievement-badge.locked {
+    border-color: var(--bs-secondary);
+    color: var(--bs-secondary);
 }
 
-.waste-hazardous {
-  background-color: #e74c3c;
+.achievement-badge:hover {
+    transform: scale(1.1);
 }
 
-.waste-nonrecyclable {
-  background-color: #34495e;
+.achievement-hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 15px rgba(255, 193, 7, 0.5);
 }
 
-/* Points display */
-.points-display {
-  background-color: var(--bs-primary);
-  color: white;
-  padding: 8px 15px;
-  border-radius: 20px;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-}
-
-/* Spinner for loading states */
-.loading-spinner {
-  width: 3rem;
-  height: 3rem;
-}
-
-/* Custom animations */
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
-.fade-in {
-  animation: fadeIn 0.5s ease-in;
+/* Floating points animation */
+.floating-points {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2rem;
+    font-weight: bold;
+    color: var(--bs-warning);
+    z-index: 9999;
+    opacity: 0;
+    pointer-events: none;
 }
 
-/* Carbon footprint tracker styles */
-.carbon-tracker {
-  padding: 20px;
-  border-radius: 12px;
-  margin-bottom: 20px;
+.floating-points.animate {
+    animation: floatPoints 2s ease-out forwards;
 }
 
-.carbon-tracker-value {
-  font-size: 2.5rem;
-  font-weight: bold;
+@keyframes floatPoints {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.5);
+    }
+    20% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.2);
+    }
+    80% {
+        opacity: 1;
+        transform: translate(-50%, -100px) scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -150px) scale(0.8);
+    }
 }
 
-.carbon-tracker-label {
-  font-size: 1rem;
-  opacity: 0.8;
+/* Info window for maps */
+.info-window {
+    min-width: 200px;
+    max-width: 300px;
 }
 
-/* Custom styles for notifications */
-.toast-container {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  z-index: 1050;
+/* Avatar styles */
+.initials-avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    color: white;
+    font-weight: bold;
+}
+
+/* Achievement animation */
+.achievement-animation {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Footer */
+.footer {
+    margin-top: 4rem;
+    padding: 2rem 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Error Pages */
+.error-page {
+    text-align: center;
+    padding: 5rem 0;
+}
+
+.error-code {
+    font-size: 8rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+}
+
+.error-icon {
+    font-size: 5rem;
+    margin-bottom: 2rem;
+    color: var(--bs-danger);
 }

@@ -1,105 +1,136 @@
-{% extends "base.html" %}
+{% extends 'layout.html' %}
 
 {% block title %}Register - EcoTrack{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-6 col-lg-5">
-            <div class="card shadow">
-                <div class="card-header bg-primary text-white text-center py-3">
-                    <h2 class="mb-0">Create an Account</h2>
-                </div>
-                <div class="card-body p-4">
-                    <form method="POST" action="{{ url_for('auth.register') }}">
-                        <div class="mb-3">
-                            <label for="username" class="form-label">Username</label>
-                            <div class="input-group">
-                                <span class="input-group-text">
-                                    <i class="fas fa-user"></i>
-                                </span>
-                                <input type="text" class="form-control" id="username" name="username" required autofocus>
-                            </div>
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card">
+            <div class="card-header bg-dark">
+                <h3 class="mb-0"><i class="fas fa-user-plus me-2"></i>Create an Account</h3>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('register') }}">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Username</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-user"></i></span>
+                            <input type="text" class="form-control" id="username" name="username" required autofocus>
                         </div>
-                        
-                        <div class="mb-3">
-                            <label for="email" class="form-label">Email Address</label>
-                            <div class="input-group">
-                                <span class="input-group-text">
-                                    <i class="fas fa-envelope"></i>
-                                </span>
-                                <input type="email" class="form-control" id="email" name="email" required>
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="password" class="form-label">Password</label>
-                            <div class="input-group">
-                                <span class="input-group-text">
-                                    <i class="fas fa-lock"></i>
-                                </span>
-                                <input type="password" class="form-control" id="password" name="password" required>
-                            </div>
-                        </div>
-                        
-                        <div class="mb-4">
-                            <label for="confirm_password" class="form-label">Confirm Password</label>
-                            <div class="input-group">
-                                <span class="input-group-text">
-                                    <i class="fas fa-lock"></i>
-                                </span>
-                                <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
-                            </div>
-                        </div>
-                        
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-user-plus me-2"></i>Register
-                            </button>
-                        </div>
-                    </form>
+                        <div class="form-text">Choose a unique username that will identify you in the community.</div>
+                    </div>
                     
-                    <div class="mt-4 text-center">
-                        <p>Already have an account? <a href="{{ url_for('auth.login') }}">Login</a></p>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                            <input type="email" class="form-control" id="email" name="email" required>
+                        </div>
+                        <div class="form-text">We'll never share your email with anyone else.</div>
                     </div>
-                </div>
-            </div>
-            
-            <!-- Sustainable Impact Card -->
-            <div class="card mt-4">
-                <div class="card-body">
-                    <h5 class="card-title text-center mb-3">Make an Impact</h5>
-                    <div class="row g-3 text-center">
-                        <div class="col-4">
-                            <div class="feature-icon bg-success text-white mx-auto mb-2" style="width: 50px; height: 50px;">
-                                <i class="fas fa-leaf"></i>
-                            </div>
-                            <p class="small mb-0">Reduce Carbon Footprint</p>
+                    
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                            <input type="password" class="form-control" id="password" name="password" required>
                         </div>
-                        <div class="col-4">
-                            <div class="feature-icon bg-primary text-white mx-auto mb-2" style="width: 50px; height: 50px;">
-                                <i class="fas fa-recycle"></i>
-                            </div>
-                            <p class="small mb-0">Track Recycling</p>
-                        </div>
-                        <div class="col-4">
-                            <div class="feature-icon bg-info text-white mx-auto mb-2" style="width: 50px; height: 50px;">
-                                <i class="fas fa-trophy"></i>
-                            </div>
-                            <p class="small mb-0">Earn Rewards</p>
+                        <div class="form-text">Use at least 8 characters with a mix of letters, numbers, and symbols.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="confirm_password" class="form-label">Confirm Password</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                            <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
                         </div>
                     </div>
+                    
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="terms" name="terms" required>
+                        <label class="form-check-label" for="terms">
+                            I agree to the <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal">Terms and Conditions</a>
+                        </label>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-user-plus me-2"></i>Register
+                        </button>
+                    </div>
+                </form>
+                
+                <div class="mt-4 text-center">
+                    <p>Already have an account? <a href="{{ url_for('login') }}">Login here</a></p>
                 </div>
             </div>
-            
-            <!-- SDG Badges -->
-            <div class="text-center mt-4">
-                <div class="d-flex justify-content-center gap-2">
-                    <div class="sdg-badge sdg-11">11</div>
-                    <div class="sdg-badge sdg-12">12</div>
-                    <div class="sdg-badge sdg-13">13</div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header bg-dark">
+                <h5 class="mb-0"><i class="fas fa-leaf me-2"></i>Why Join EcoTrack?</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check-circle text-success me-2"></i>Track your environmental impact</li>
+                            <li><i class="fas fa-check-circle text-success me-2"></i>Classify waste items easily</li>
+                            <li><i class="fas fa-check-circle text-success me-2"></i>Find nearby recycling centers</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check-circle text-success me-2"></i>Earn points and achievements</li>
+                            <li><i class="fas fa-check-circle text-success me-2"></i>Monitor your carbon footprint</li>
+                            <li><i class="fas fa-check-circle text-success me-2"></i>Be part of a green community</li>
+                        </ul>
+                    </div>
                 </div>
-                <p class="small text-muted mt-2">Supporting UN Sustainable Development Goals</p>
+                <div class="alert alert-info mt-3">
+                    <i class="fas fa-globe me-2"></i>
+                    By joining EcoTrack, you're contributing to the UN Sustainable Development Goals 11, 12, and 13.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Terms and Conditions Modal -->
+<div class="modal fade" id="termsModal" tabindex="-1" aria-labelledby="termsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="termsModalLabel">Terms and Conditions</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h5>EcoTrack User Agreement</h5>
+                <p>By creating an account on EcoTrack, you agree to the following terms and conditions:</p>
+                
+                <h6>1. User Data</h6>
+                <p>The data you provide, including waste classification images and recycling activities, will be used to track your environmental impact and provide insights to help you reduce waste.</p>
+                
+                <h6>2. Privacy</h6>
+                <p>We respect your privacy and will only use your data in accordance with our privacy policy. We will never share your personal information with third parties without your consent.</p>
+                
+                <h6>3. User Conduct</h6>
+                <p>You agree to use EcoTrack responsibly and to provide accurate information about your waste disposal and recycling activities.</p>
+                
+                <h6>4. Content</h6>
+                <p>Any content you upload, including waste images, must not contain inappropriate or offensive material.</p>
+                
+                <h6>5. Account Security</h6>
+                <p>You are responsible for maintaining the security of your account and password. EcoTrack cannot and will not be liable for any loss or damage from your failure to comply with this security obligation.</p>
+                
+                <h6>6. Service Changes</h6>
+                <p>EcoTrack reserves the right to modify or discontinue, temporarily or permanently, the service with or without notice.</p>
+                
+                <h6>7. Termination</h6>
+                <p>EcoTrack reserves the right to terminate your account if you violate these terms or for any other reason at our sole discretion.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>

@@ -1,6 +1,6 @@
 import os
 import logging
-from flask import Flask
+from flask import Flask, render_template
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
 from flask_login import LoginManager
@@ -11,12 +11,13 @@ logging.basicConfig(level=logging.DEBUG)
 class Base(DeclarativeBase):
     pass
 
-# Initialize database
+# Initialize extensions
 db = SQLAlchemy(model_class=Base)
+login_manager = LoginManager()
 
-# Create Flask app
+# Create the app
 app = Flask(__name__)
-app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key")
+app.secret_key = os.environ.get("SESSION_SECRET")
 
 # Configure the database
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:///waste_management.db")
@@ -26,35 +27,28 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
 }
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-# Configure API keys for external services
-app.config["GOOGLE_VISION_API_KEY"] = os.environ.get("GOOGLE_VISION_API_KEY", "")
+# Google API Keys
 app.config["GOOGLE_MAPS_API_KEY"] = os.environ.get("GOOGLE_MAPS_API_KEY", "")
+app.config["GOOGLE_VISION_API_KEY"] = os.environ.get("GOOGLE_VISION_API_KEY", "")
 
-# Initialize the app with the extension
+# Initialize the app with extensions
 db.init_app(app)
-
-# Configure login manager
-login_manager = LoginManager()
 login_manager.init_app(app)
-login_manager.login_view = 'auth.login'
+login_manager.login_view = 'login'
 
-# Import models and create tables
 with app.app_context():
-    # Import models here to avoid circular imports
+    # Import models to create tables
     import models
     db.create_all()
 
-# Register blueprints
-from routes.auth import auth_bp
-from routes.main import main_bp
-from routes.api import api_bp
+# Error handlers
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('404.html'), 404
 
-app.register_blueprint(auth_bp)
-app.register_blueprint(main_bp)
-app.register_blueprint(api_bp)
+@app.errorhandler(500)
+def server_error(e):
+    return render_template('500.html'), 500
 
-# Configure user loader for Flask-Login
-@login_manager.user_loader
-def load_user(user_id):
-    from models import User
-    return User.query.get(int(user_id))
+# Import routes after app context and error handlers are initialized
+import routes

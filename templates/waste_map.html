@@ -1,0 +1,195 @@
+{% extends 'layout.html' %}
+
+{% block title %}Recycling Map - EcoTrack{% endblock %}
+
+{% block extra_head %}
+    <!-- Google Maps API -->
+    <script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=places&callback=initMap" async defer></script>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-map-marked-alt me-2 text-info"></i>Recycling Centers Map</h1>
+    <p class="lead">Find nearby recycling centers and log your recycling activities.</p>
+</div>
+
+<div id="alerts-container"></div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card mb-4" id="map-container">
+            <div class="card-header bg-dark">
+                <h5 class="mb-0">
+                    <i class="fas fa-map me-2"></i>Map
+                    <div class="float-end">
+                        <div class="input-group input-group-sm">
+                            <label class="input-group-text" for="search-radius">Radius</label>
+                            <select class="form-select" id="search-radius">
+                                <option value="5">5 km</option>
+                                <option value="10" selected>10 km</option>
+                                <option value="20">20 km</option>
+                                <option value="50">50 km</option>
+                            </select>
+                        </div>
+                    </div>
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div id="map"></div>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header bg-dark">
+                <h5 class="mb-0"><i class="fas fa-search-location me-2"></i>Search Location</h5>
+            </div>
+            <div class="card-body">
+                <div class="input-group mb-3">
+                    <span class="input-group-text"><i class="fas fa-map-marker-alt"></i></span>
+                    <input type="text" id="search-location" class="form-control" placeholder="Search for a location...">
+                    <button class="btn btn-primary" type="button" id="search-button">
+                        <i class="fas fa-search"></i> Search
+                    </button>
+                </div>
+                <div class="form-text text-muted">
+                    <i class="fas fa-info-circle me-1"></i>Search for a location or allow the app to use your current location.
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-header bg-dark">
+                <h5 class="mb-0">
+                    <i class="fas fa-recycle me-2"></i>Recycling Centers
+                    <div class="spinner-border spinner-border-sm float-end d-none" id="loading-indicator" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="recycling-centers-list">
+                    <div class="text-center py-5">
+                        <i class="fas fa-map-marked-alt fa-3x mb-3 text-info"></i>
+                        <p>Searching for recycling centers near you...</p>
+                        <div class="spinner-border text-info" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header bg-dark">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Waste Disposal Tips</h5>
+            </div>
+            <div class="card-body">
+                <div class="accordion" id="tipsAccordion">
+                    <div class="accordion-item bg-dark">
+                        <h2 class="accordion-header" id="headingOne">
+                            <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+                                <i class="fas fa-recycle me-2 text-success"></i>Recycling Best Practices
+                            </button>
+                        </h2>
+                        <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#tipsAccordion">
+                            <div class="accordion-body">
+                                <ul class="list-unstyled">
+                                    <li><i class="fas fa-check-circle text-success me-2"></i>Clean containers before recycling</li>
+                                    <li><i class="fas fa-check-circle text-success me-2"></i>Remove caps and lids</li>
+                                    <li><i class="fas fa-check-circle text-success me-2"></i>Flatten cardboard boxes</li>
+                                    <li><i class="fas fa-check-circle text-success me-2"></i>Keep paper dry and clean</li>
+                                    <li><i class="fas fa-check-circle text-success me-2"></i>Check local recycling guidelines</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item bg-dark">
+                        <h2 class="accordion-header" id="headingTwo">
+                            <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                                <i class="fas fa-leaf me-2 text-success"></i>Environmental Impact
+                            </button>
+                        </h2>
+                        <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#tipsAccordion">
+                            <div class="accordion-body">
+                                <p>Recycling one ton of paper can save:</p>
+                                <ul class="list-unstyled">
+                                    <li><i class="fas fa-tree text-success me-2"></i>17 trees</li>
+                                    <li><i class="fas fa-tint text-primary me-2"></i>7,000 gallons of water</li>
+                                    <li><i class="fas fa-bolt text-warning me-2"></i>4,100 kilowatt-hours of electricity</li>
+                                    <li><i class="fas fa-trash-alt text-danger me-2"></i>3 cubic yards of landfill space</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item bg-dark">
+                        <h2 class="accordion-header" id="headingThree">
+                            <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                                <i class="fas fa-lightbulb me-2 text-warning"></i>Recycling Facts
+                            </button>
+                        </h2>
+                        <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#tipsAccordion">
+                            <div class="accordion-body">
+                                <ul class="list-unstyled">
+                                    <li><i class="fas fa-info-circle text-info me-2"></i>Aluminum cans can be recycled infinitely</li>
+                                    <li><i class="fas fa-info-circle text-info me-2"></i>Glass takes 4,000 years to decompose</li>
+                                    <li><i class="fas fa-info-circle text-info me-2"></i>Plastic bags take 10-1,000 years to decompose</li>
+                                    <li><i class="fas fa-info-circle text-info me-2"></i>Americans throw away 2.5 million plastic bottles every hour</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Log Recycling Modal -->
+<div class="modal fade" id="log-recycling-modal" tabindex="-1" aria-labelledby="logRecyclingModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="logRecyclingModalLabel">
+                    <i class="fas fa-plus-circle me-2"></i>Log Recycling Activity
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="recycling-log-form">
+                    <input type="hidden" id="center-id" name="center-id">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Recycling Center</label>
+                        <div class="form-control bg-dark" id="recycling-center-name" readonly></div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="waste-type" class="form-label">Waste Type</label>
+                        <select class="form-select" id="waste-type" name="waste-type" required>
+                            <!-- Options will be populated dynamically -->
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="waste-weight" class="form-label">Weight (kg)</label>
+                        <input type="number" class="form-control" id="waste-weight" name="waste-weight" min="0.1" step="0.1" value="1" required>
+                        <div class="form-text">Estimate the weight of your recycled materials.</div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success" id="submit-recycling-log">
+                            <i class="fas fa-save me-2"></i>Log Recycling
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/map.js') }}"></script>
+{% endblock %}

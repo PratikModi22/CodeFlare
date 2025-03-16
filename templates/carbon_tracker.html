@@ -1,0 +1,246 @@
+{% extends 'layout.html' %}
+
+{% block title %}Carbon Tracker - EcoTrack{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-leaf me-2 text-success"></i>Carbon Footprint Tracker</h1>
+    <p class="lead">Track the environmental impact of your waste management activities.</p>
+</div>
+
+<div id="carbon-alerts"></div>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3 class="text-success">Your Total Carbon Savings</h3>
+                <div class="display-1 text-success mb-3" id="total-carbon-saved" data-value="{{ total_carbon_saved }}">
+                    {{ total_carbon_saved|round(2) }} kg CO2
+                </div>
+                <p class="lead">
+                    Great job! Your sustainable waste management has helped reduce carbon emissions and combat climate change.
+                </p>
+                <div class="mt-3">
+                    <button class="btn btn-outline-info me-2" onclick="calculateCarbonFootprint()">
+                        <i class="fas fa-calculator me-2"></i>Calculate Your Footprint
+                    </button>
+                    <a href="{{ url_for('waste_map') }}" class="btn btn-success">
+                        <i class="fas fa-recycle me-2"></i>Recycle More
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-4 mb-4">
+        <div class="card impact-card h-100">
+            <div class="card-body text-center">
+                <div class="impact-icon">
+                    <i class="fas fa-tree text-success"></i>
+                </div>
+                <div class="impact-value" id="trees-saved" data-value="{{ trees_saved }}">
+                    {{ trees_saved|round(2) }}
+                </div>
+                <h5>Trees</h5>
+                <p class="text-muted">Equivalent to the annual CO2 absorption of this many trees</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="card impact-card h-100">
+            <div class="card-body text-center">
+                <div class="impact-icon">
+                    <i class="fas fa-car text-info"></i>
+                </div>
+                <div class="impact-value" id="car-km-saved" data-value="{{ car_km_saved }}">
+                    {{ car_km_saved|round(2) }}
+                </div>
+                <h5>Car Kilometers</h5>
+                <p class="text-muted">Equivalent to not driving a car for this many kilometers</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="card impact-card h-100">
+            <div class="card-body text-center">
+                <div class="impact-icon">
+                    <i class="fas fa-mobile-alt text-purple"></i>
+                </div>
+                <div class="impact-value" id="smartphone-charges" data-value="{{ total_carbon_saved * 100 }}">
+                    {{ (total_carbon_saved * 100)|round|int }}
+                </div>
+                <h5>Smartphone Charges</h5>
+                <p class="text-muted">Equivalent to the carbon footprint of this many full phone charges</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8 mb-4">
+        <div class="card">
+            <div class="card-header bg-dark">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Carbon Impact Over Time</h5>
+                    <select id="date-range" class="form-select form-select-sm" style="width: auto;">
+                        <option value="3m">Last 3 Months</option>
+                        <option value="6m" selected>Last 6 Months</option>
+                        <option value="1y">Last Year</option>
+                    </select>
+                </div>
+            </div>
+            <div class="card-body" id="carbon-impact-chart-container">
+                <canvas id="carbon-impact-chart"></canvas>
+                
+                <!-- Hidden data for chart -->
+                {% for data in monthly_data %}
+                <div class="monthly-carbon-data d-none" data-month="{{ data.month }}" data-value="{{ data.carbon_saved }}"></div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="card">
+            <div class="card-header bg-dark">
+                <h5 class="mb-0"><i class="fas fa-bullseye me-2"></i>Set a Carbon Saving Goal</h5>
+            </div>
+            <div class="card-body">
+                <div id="carbon-goal-display" class="d-none"></div>
+                
+                <form id="carbon-goal-form">
+                    <div class="mb-3">
+                        <label for="goal-amount" class="form-label">Goal Amount (kg CO2)</label>
+                        <input type="number" class="form-control" id="goal-amount" min="1" step="1" placeholder="e.g., 100" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="goal-timeframe" class="form-label">Timeframe</label>
+                        <select class="form-select" id="goal-timeframe" required>
+                            <option value="week">1 Week</option>
+                            <option value="month" selected>1 Month</option>
+                            <option value="year">1 Year</option>
+                        </select>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-flag-checkered me-2"></i>Set Goal
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header bg-dark">
+                <h5 class="mb-0"><i class="fas fa-lightbulb me-2"></i>Carbon Saving Tips</h5>
+            </div>
+            <div class="card-body">
+                <div id="carbon-tips-carousel" class="carousel slide" data-bs-ride="carousel">
+                    <div class="carousel-inner">
+                        <div class="carousel-item active">
+                            <div class="card bg-dark">
+                                <div class="card-body">
+                                    <h5 class="card-title"><i class="fas fa-recycle text-success me-2"></i>Proper Recycling</h5>
+                                    <p class="card-text">Recycling one ton of paper saves 17 trees and reduces greenhouse gas emissions by one metric ton of carbon equivalent.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="carousel-item">
+                            <div class="card bg-dark">
+                                <div class="card-body">
+                                    <h5 class="card-title"><i class="fas fa-apple-alt text-danger me-2"></i>Compost Food Waste</h5>
+                                    <p class="card-text">Composting food scraps can reduce methane emissions from landfills and create nutrient-rich soil for plants.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="carousel-item">
+                            <div class="card bg-dark">
+                                <div class="card-body">
+                                    <h5 class="card-title"><i class="fas fa-shopping-bag text-warning me-2"></i>Reduce Single-Use</h5>
+                                    <p class="card-text">Using reusable bags, bottles, and containers can significantly reduce your carbon footprint over time.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="carousel-control-prev" type="button" data-bs-target="#carbon-tips-carousel" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Previous</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#carbon-tips-carousel" data-bs-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Next</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Carbon Footprint Calculator Modal -->
+<div class="modal fade" id="carbon-footprint-modal" tabindex="-1" aria-labelledby="carbonFootprintModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="carbonFootprintModalLabel">
+                    <i class="fas fa-calculator me-2"></i>Carbon Footprint Calculator
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="footprint-form">
+                    <p>Calculate your approximate annual carbon footprint by answering a few questions:</p>
+                    
+                    <div class="mb-3">
+                        <label for="transportation" class="form-label">Daily Commute Distance (km)</label>
+                        <input type="number" class="form-control" id="transportation" min="0" step="1" placeholder="e.g., 20">
+                        <div class="form-text">Average distance you travel each day (round trip)</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="diet" class="form-label">Diet Type</label>
+                        <select class="form-select" id="diet">
+                            <option value="meat-heavy">Meat with every meal</option>
+                            <option value="average" selected>Average (meat a few times a week)</option>
+                            <option value="vegetarian">Vegetarian</option>
+                            <option value="vegan">Vegan</option>
+                        </select>
+                        <div class="form-text">Your typical diet affects your carbon footprint</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="home-energy" class="form-label">Monthly Electricity Usage (kWh)</label>
+                        <input type="number" class="form-control" id="home-energy" min="0" step="1" placeholder="e.g., 300">
+                        <div class="form-text">Check your electricity bill for this information</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="shopping" class="form-label">Monthly Shopping Budget ($)</label>
+                        <input type="number" class="form-control" id="shopping" min="0" step="1" placeholder="e.g., 200">
+                        <div class="form-text">Estimate how much you spend on consumer goods monthly</div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="button" class="btn btn-primary" onclick="processCarbonFootprintCalculation()">
+                            <i class="fas fa-calculator me-2"></i>Calculate Footprint
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="footprint-result" class="d-none"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="resetCarbonFootprintCalculator()">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/carbon_tracker.js') }}"></script>
+{% endblock %}

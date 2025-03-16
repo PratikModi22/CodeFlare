@@ -1,0 +1,94 @@
+{% extends 'simple_layout.html' %}
+
+{% block title %}EcoTrack - Sustainable Waste Management{% endblock %}
+
+{% block content %}
+<div class="jumbotron bg-dark p-4 rounded">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h1 class="display-4">Track, Recycle, Impact</h1>
+            <p class="lead">Join our mission to create a sustainable future through smart waste management.</p>
+            <p>EcoTrack helps you classify waste, find recycling centers, and track your environmental impact.</p>
+            <div class="mt-4">
+                <a href="/register" class="btn btn-success btn-lg me-2">
+                    <i class="fas fa-user-plus me-2"></i>Get Started
+                </a>
+                <a href="/login" class="btn btn-outline-light btn-lg">
+                    <i class="fas fa-sign-in-alt me-2"></i>Login
+                </a>
+            </div>
+        </div>
+        <div class="col-md-4 d-none d-md-block">
+            <div class="text-center">
+                <i class="fas fa-recycle fa-9x eco-icon" style="opacity: 0.8;"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- UN SDG Goals Section -->
+<section class="mt-5">
+    <h2 class="mb-4"><i class="fas fa-globe me-2"></i>UN Sustainable Development Goals</h2>
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-city fa-3x"></i>
+                    </div>
+                    <h3 class="card-title">SDG 11</h3>
+                    <h5>Sustainable Cities and Communities</h5>
+                    <p class="card-text">Make cities inclusive, safe, resilient and sustainable by improving waste management systems.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-shopping-cart fa-3x"></i>
+                    </div>
+                    <h3 class="card-title">SDG 12</h3>
+                    <h5>Responsible Consumption and Production</h5>
+                    <p class="card-text">Ensure sustainable consumption and production patterns by promoting recycling and reuse.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-temperature-high fa-3x"></i>
+                    </div>
+                    <h3 class="card-title">SDG 13</h3>
+                    <h5>Climate Action</h5>
+                    <p class="card-text">Combat climate change and its impacts by reducing waste-related greenhouse gas emissions.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="mt-5">
+    <h2 class="mb-4"><i class="fas fa-star me-2"></i>Key Features</h2>
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h3><i class="fas fa-camera text-success me-2"></i>Waste Classification</h3>
+                    <p>Upload images of waste items to instantly classify them using AI. Learn how to properly dispose of different types of waste.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h3><i class="fas fa-map-marked-alt text-info me-2"></i>Recycling Map</h3>
+                    <p>Find nearby recycling centers and disposal facilities. Get directions and information about accepted waste types.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

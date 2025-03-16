@@ -1,19 +1,24 @@
-from app import db
 from datetime import datetime
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
+from app import db, login_manager
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(256), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
     points = db.Column(db.Integer, default=0)
-    carbon_saved = db.Column(db.Float, default=0.0)  # in kg CO2
+    carbon_saved = db.Column(db.Float, default=0.0)
+    date_joined = db.Column(db.DateTime, default=datetime.utcnow)
     
-    # Relations
-    waste_records = db.relationship('WasteRecord', backref='user', lazy=True)
+    # Relationships
+    waste_logs = db.relationship('WasteLog', backref='user', lazy='dynamic')
+    recycling_activities = db.relationship('RecyclingActivity', backref='user', lazy='dynamic')
     
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -21,110 +26,72 @@ class User(UserMixin, db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
-class WasteCategory(db.Model):
+    def add_points(self, points):
+        self.points += points
+        db.session.commit()
+    
+    def add_carbon_saved(self, amount):
+        self.carbon_saved += amount
+        db.session.commit()
+
+class WasteType(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(64), unique=True, nullable=False)
+    name = db.Column(db.String(50), nullable=False)
     description = db.Column(db.Text)
     recyclable = db.Column(db.Boolean, default=False)
-    carbon_factor = db.Column(db.Float, default=0.0)  # carbon impact per kg
+    carbon_impact = db.Column(db.Float, default=0.0)  # CO2 equivalent per kg
     
-    # Relations
-    waste_records = db.relationship('WasteRecord', backref='category', lazy=True)
+    # Relationships
+    waste_logs = db.relationship('WasteLog', backref='waste_type', lazy='dynamic')
 
-class WasteRecord(db.Model):
+class WasteLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    category_id = db.Column(db.Integer, db.ForeignKey('waste_category.id'), nullable=False)
-    quantity = db.Column(db.Float, default=1.0)  # in kg
+    waste_type_id = db.Column(db.Integer, db.ForeignKey('waste_type.id'), nullable=False)
+    weight = db.Column(db.Float, default=0.0)  # in kg
+    image_url = db.Column(db.String(255))
     disposed_properly = db.Column(db.Boolean, default=True)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
-    image_url = db.Column(db.String(256))
-    location_lat = db.Column(db.Float)
-    location_lng = db.Column(db.Float)
-    points_earned = db.Column(db.Integer, default=0)
-    carbon_impact = db.Column(db.Float, default=0.0)  # in kg CO2
+    
+    def carbon_impact(self):
+        return self.weight * self.waste_type.carbon_impact
 
 class RecyclingCenter(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(128), nullable=False)
-    address = db.Column(db.String(256))
+    name = db.Column(db.String(100), nullable=False)
+    address = db.Column(db.String(255), nullable=False)
     latitude = db.Column(db.Float, nullable=False)
     longitude = db.Column(db.Float, nullable=False)
-    phone = db.Column(db.String(20))
-    website = db.Column(db.String(128))
     description = db.Column(db.Text)
+    waste_types = db.Column(db.String(255))  # Comma-separated list of waste types accepted
+    operational_hours = db.Column(db.String(255))
     
-    # Accepted waste types (comma-separated list of category IDs)
-    accepted_waste = db.Column(db.String(256))
-    
-    # Opening hours (JSON string)
-    opening_hours = db.Column(db.Text)
+    # Relationships
+    activities = db.relationship('RecyclingActivity', backref='center', lazy='dynamic')
 
-class Badge(db.Model):
+class RecyclingActivity(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(64), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    center_id = db.Column(db.Integer, db.ForeignKey('recycling_center.id'), nullable=False)
+    waste_type = db.Column(db.String(50))
+    weight = db.Column(db.Float, default=0.0)  # in kg
+    points_earned = db.Column(db.Integer, default=0)
+    carbon_saved = db.Column(db.Float, default=0.0)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+class Achievement(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text)
-    image_url = db.Column(db.String(256))
     points_required = db.Column(db.Integer, default=0)
+    icon = db.Column(db.String(255))
     
-    # Many-to-many relationship with users
-    users = db.relationship('User', secondary='user_badges', backref=db.backref('badges', lazy='dynamic'))
+    # Define a many-to-many relationship with User
+    users = db.relationship('User', secondary='user_achievement', backref=db.backref('achievements', lazy='dynamic'))
 
-# Association table for User and Badge (many-to-many)
-user_badges = db.Table('user_badges',
+# Association table for User and Achievement (many-to-many)
+user_achievement = db.Table('user_achievement',
     db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True),
-    db.Column('badge_id', db.Integer, db.ForeignKey('badge.id'), primary_key=True),
-    db.Column('earned_date', db.DateTime, default=datetime.utcnow)
+    db.Column('achievement_id', db.Integer, db.ForeignKey('achievement.id'), primary_key=True),
+    db.Column('date_achieved', db.DateTime, default=datetime.utcnow)
 )
-
-# Initialize default waste categories
-def init_waste_categories():
-    categories = [
-        {'name': 'Plastic', 'recyclable': True, 'carbon_factor': 6.0, 
-         'description': 'Includes bottles, containers, bags, and packaging.'},
-        {'name': 'Paper', 'recyclable': True, 'carbon_factor': 1.5, 
-         'description': 'Includes newspapers, magazines, office paper, and cardboard.'},
-        {'name': 'Glass', 'recyclable': True, 'carbon_factor': 0.9, 
-         'description': 'Includes bottles, jars, and containers.'},
-        {'name': 'Metal', 'recyclable': True, 'carbon_factor': 4.0, 
-         'description': 'Includes cans, aluminum foil, and scrap metal.'},
-        {'name': 'Organic', 'recyclable': True, 'carbon_factor': 0.8, 
-         'description': 'Includes food waste, garden waste, and compostable materials.'},
-        {'name': 'Electronic', 'recyclable': True, 'carbon_factor': 20.0, 
-         'description': 'Includes devices, batteries, and electrical components.'},
-        {'name': 'Hazardous', 'recyclable': False, 'carbon_factor': 30.0, 
-         'description': 'Includes chemicals, medical waste, and toxic materials.'},
-        {'name': 'Non-recyclable', 'recyclable': False, 'carbon_factor': 2.5, 
-         'description': 'General waste that cannot be recycled.'}
-    ]
-    
-    for category_data in categories:
-        category = WasteCategory.query.filter_by(name=category_data['name']).first()
-        if not category:
-            category = WasteCategory(**category_data)
-            db.session.add(category)
-    
-    db.session.commit()
-
-# Initialize badges
-def init_badges():
-    badges = [
-        {'name': 'Beginner Recycler', 'points_required': 100, 
-         'description': 'Started your journey towards sustainable waste management.'},
-        {'name': 'Waste Warrior', 'points_required': 500, 
-         'description': 'Consistently practicing proper waste disposal.'},
-        {'name': 'Eco Champion', 'points_required': 1000, 
-         'description': 'Making a significant positive impact on the environment.'},
-        {'name': 'Sustainability Expert', 'points_required': 2500, 
-         'description': 'Leading by example in sustainable waste practices.'},
-        {'name': 'Planet Protector', 'points_required': 5000, 
-         'description': 'Your efforts have saved significant carbon emissions.'}
-    ]
-    
-    for badge_data in badges:
-        badge = Badge.query.filter_by(name=badge_data['name']).first()
-        if not badge:
-            badge = Badge(**badge_data)
-            db.session.add(badge)
-    
-    db.session.commit()

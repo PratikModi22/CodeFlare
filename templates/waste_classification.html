@@ -1,0 +1,172 @@
+{% extends 'layout.html' %}
+
+{% block title %}Waste Classification - EcoTrack{% endblock %}
+
+{% block extra_head %}
+    <!-- TippyJS for tooltips -->
+    <script src="https://unpkg.com/@popperjs/core@2"></script>
+    <script src="https://unpkg.com/tippy.js@6"></script>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-camera me-2 text-success"></i>Waste Classification</h1>
+    <p class="lead">Upload an image of waste to classify it and learn how to dispose of it properly.</p>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header bg-dark">
+                <h5 class="mb-0"><i class="fas fa-upload me-2"></i>Upload Waste Image</h5>
+            </div>
+            <div class="card-body">
+                <form id="upload-form" enctype="multipart/form-data">
+                    <div id="drop-area" data-tippy-content="Drag & drop an image or click to browse">
+                        <i class="fas fa-cloud-upload-alt fa-3x mb-3 text-info"></i>
+                        <h5>Drag & Drop Image Here</h5>
+                        <p>or</p>
+                        <label for="image-upload" class="btn btn-info">
+                            <i class="fas fa-file-image me-2"></i>Browse Files
+                        </label>
+                        <input type="file" id="image-upload" name="image" accept="image/*" class="d-none">
+                        
+                        <div class="mt-3 d-none" id="file-info"></div>
+                    </div>
+
+                    <div class="text-center mt-3">
+                        <button type="button" id="camera-btn" class="btn btn-outline-secondary" data-tippy-content="Take a photo with your camera">
+                            <i class="fas fa-camera me-2"></i>Use Camera
+                        </button>
+                    </div>
+                    
+                    <div id="preview-container" class="text-center mt-4 d-none">
+                        <img id="image-preview" class="d-none" alt="Preview">
+                        <div class="mt-3">
+                            <button type="submit" id="classify-btn" class="btn btn-success me-2" disabled>
+                                <i class="fas fa-search me-2"></i>Classify Waste
+                            </button>
+                            <button type="button" id="reset-btn" class="btn btn-outline-danger">
+                                <i class="fas fa-redo me-2"></i>Reset
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header bg-dark">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Why Classify Waste?</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item bg-dark">
+                        <i class="fas fa-check text-success me-2"></i>
+                        <strong>Proper Recycling:</strong> Learn how to correctly dispose of different waste types
+                    </li>
+                    <li class="list-group-item bg-dark">
+                        <i class="fas fa-check text-success me-2"></i>
+                        <strong>Environmental Impact:</strong> Reduce landfill waste and minimize pollution
+                    </li>
+                    <li class="list-group-item bg-dark">
+                        <i class="fas fa-check text-success me-2"></i>
+                        <strong>Resource Conservation:</strong> Help conserve natural resources through recycling
+                    </li>
+                    <li class="list-group-item bg-dark">
+                        <i class="fas fa-check text-success me-2"></i>
+                        <strong>Carbon Footprint:</strong> Track your positive environmental impact
+                    </li>
+                </ul>
+                
+                <div class="alert alert-info mt-3">
+                    <i class="fas fa-lightbulb me-2"></i>
+                    <strong>Tip:</strong> Take clear photos in good lighting for the most accurate classification.
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div id="classification-result" class="d-none mb-4"></div>
+        
+        <div class="card">
+            <div class="card-header bg-dark">
+                <h5 class="mb-0"><i class="fas fa-recycle me-2"></i>Common Waste Types</h5>
+            </div>
+            <div class="card-body">
+                <div class="accordion" id="wasteTypesAccordion">
+                    {% for waste_type in waste_types %}
+                    <div class="accordion-item bg-dark">
+                        <h2 class="accordion-header" id="heading{{ loop.index }}">
+                            <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ loop.index }}" aria-expanded="false" aria-controls="collapse{{ loop.index }}">
+                                <i class="fas fa-trash-alt me-2"></i>{{ waste_type.name }}
+                                <span class="badge {% if waste_type.recyclable %}bg-success{% else %}bg-danger{% endif %} ms-auto">
+                                    {% if waste_type.recyclable %}Recyclable{% else %}Non-Recyclable{% endif %}
+                                </span>
+                            </button>
+                        </h2>
+                        <div id="collapse{{ loop.index }}" class="accordion-collapse collapse" aria-labelledby="heading{{ loop.index }}" data-bs-parent="#wasteTypesAccordion">
+                            <div class="accordion-body">
+                                <p>{{ waste_type.description or 'No description available.' }}</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span>
+                                        <i class="fas fa-leaf me-1 text-success"></i>
+                                        Carbon Impact: {{ waste_type.carbon_impact }} kg CO2 per kg
+                                    </span>
+                                    {% if waste_type.recyclable %}
+                                    <button class="btn btn-sm btn-outline-success" onclick="findRecyclingCenters('{{ waste_type.name }}')">
+                                        <i class="fas fa-map-marker-alt me-1"></i>
+                                        Find Recycling Centers
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Camera Modal -->
+<div class="modal fade" id="camera-modal" tabindex="-1" aria-labelledby="cameraModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-dark">
+                <h5 class="modal-title" id="cameraModalLabel"><i class="fas fa-camera me-2"></i>Take a Photo</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <div id="camera-feedback" class="mb-3"></div>
+                <video id="camera-feed" autoplay style="width: 100%; max-height: 400px; background-color: #000;"></video>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" id="capture-btn" class="btn btn-primary" disabled>
+                    <i class="fas fa-camera me-2"></i>Capture
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/waste_classification.js') }}"></script>
+<script>
+    // Initialize tooltips when the document is ready
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof tippy !== 'undefined') {
+            tippy('[data-tippy-content]');
+        }
+    });
+    
+    // Function to redirect to waste map
+    function findRecyclingCenters(wasteType) {
+        window.location.href = `/waste-map?waste_type=${encodeURIComponent(wasteType)}`;
+    }
+</script>
+{% endblock %}
