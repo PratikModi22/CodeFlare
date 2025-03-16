@@ -1,97 +1,77 @@
 import os
-import logging
 import json
-import base64
-from datetime import datetime, timedelta
-from io import BytesIO
+import logging
+from datetime import datetime
 from flask import render_template, request, redirect, url_for, flash, jsonify, session
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.utils import secure_filename
 from app import app, db
-from models import User, WasteType, WasteLog, RecyclingCenter, RecyclingActivity, Achievement
-from utils import classify_waste_image, get_nearby_recycling_centers, calculate_carbon_savings
+from models import User, WasteEntry, EcoActivity, RecyclingCenter
+from utils.waste_classifier import classify_waste_image
+from utils.maps_helper import find_nearby_centers
+from utils.carbon_calculator import calculate_carbon_savings
 
-# Home page
+logger = logging.getLogger(__name__)
+
+# Home route
 @app.route('/')
 def index():
-    waste_types = WasteType.query.all()
-    achievements = Achievement.query.order_by(Achievement.points_required).limit(5).all()
+    sdg_info = {
+        "sdg11": "Sustainable Cities and Communities",
+        "sdg12": "Responsible Consumption and Production",
+        "sdg13": "Climate Action"
+    }
     
-    # Get statistics for the dashboard
-    if current_user.is_authenticated:
-        user_waste_logs = WasteLog.query.filter_by(user_id=current_user.id).count()
-        total_carbon_saved = current_user.carbon_saved
-        recent_activities = RecyclingActivity.query.filter_by(user_id=current_user.id).order_by(RecyclingActivity.timestamp.desc()).limit(5).all()
-        user_points = current_user.points
-    else:
-        user_waste_logs = 0
-        total_carbon_saved = 0
-        recent_activities = []
-        user_points = 0
-        
-    # Get global statistics
-    total_users = User.query.count()
-    total_waste_logs = WasteLog.query.count()
-    total_carbon_saved_global = db.session.query(db.func.sum(User.carbon_saved)).scalar() or 0
+    stats = {
+        "users": User.query.count(),
+        "waste_entries": WasteEntry.query.count(),
+        "total_carbon_saved": db.session.query(db.func.sum(WasteEntry.carbon_saved)).scalar() or 0
+    }
     
-    return render_template('index.html', 
-                          waste_types=waste_types,
-                          achievements=achievements, 
-                          user_waste_logs=user_waste_logs,
-                          total_carbon_saved=total_carbon_saved,
-                          recent_activities=recent_activities,
-                          user_points=user_points,
-                          total_users=total_users,
-                          total_waste_logs=total_waste_logs,
-                          total_carbon_saved_global=total_carbon_saved_global)
+    return render_template('index.html', sdg_info=sdg_info, stats=stats)
 
 # Authentication routes
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('index'))
-        
+    
     if request.method == 'POST':
-        email = request.form.get('email')
+        username = request.form.get('username')
         password = request.form.get('password')
         
-        user = User.query.filter_by(email=email).first()
+        user = User.query.filter_by(username=username).first()
         
-        if user and user.check_password(password):
-            login_user(user, remember=True)
-            next_page = request.args.get('next')
-            flash('Login successful!', 'success')
-            return redirect(next_page or url_for('index'))
-        else:
-            flash('Invalid email or password', 'danger')
-            
-    return render_template('login.html')
+        if user is None or not user.check_password(password):
+            flash('Invalid username or password', 'danger')
+            return redirect(url_for('login'))
+        
+        login_user(user, remember=True)
+        next_page = request.args.get('next')
+        
+        flash('Login successful!', 'success')
+        return redirect(next_page or url_for('index'))
+    
+    return render_template('auth/login.html')
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if current_user.is_authenticated:
         return redirect(url_for('index'))
-        
+    
     if request.method == 'POST':
         username = request.form.get('username')
         email = request.form.get('email')
         password = request.form.get('password')
-        confirm_password = request.form.get('confirm_password')
         
-        # Form validation
-        if password != confirm_password:
-            flash('Passwords do not match', 'danger')
-            return render_template('register.html')
-            
         if User.query.filter_by(username=username).first():
             flash('Username already exists', 'danger')
-            return render_template('register.html')
-            
-        if User.query.filter_by(email=email).first():
-            flash('Email already exists', 'danger')
-            return render_template('register.html')
+            return redirect(url_for('register'))
         
-        # Create new user
+        if User.query.filter_by(email=email).first():
+            flash('Email already registered', 'danger')
+            return redirect(url_for('register'))
+        
         user = User(username=username, email=email)
         user.set_password(password)
         
@@ -100,399 +80,237 @@ def register():
         
         flash('Registration successful! Please log in.', 'success')
         return redirect(url_for('login'))
-        
-    return render_template('register.html')
+    
+    return render_template('auth/register.html')
 
 @app.route('/logout')
 @login_required
 def logout():
     logout_user()
+    flash('You have been logged out.', 'info')
     return redirect(url_for('index'))
 
-# Waste Classification
-@app.route('/waste-classification', methods=['GET'])
+# Waste Classification Routes
+@app.route('/classify', methods=['GET'])
 @login_required
-def waste_classification():
-    waste_types = WasteType.query.all()
-    return render_template('waste_classification.html', waste_types=waste_types)
+def classify_page():
+    return render_template('classify.html', google_maps_api_key=app.config["GOOGLE_MAPS_API_KEY"])
 
-@app.route('/api/classify-waste', methods=['POST'])
+@app.route('/api/classify', methods=['POST'])
 @login_required
-def api_classify_waste():
+def classify_waste():
     if 'image' not in request.files:
         return jsonify({'error': 'No image provided'}), 400
-        
-    file = request.files['image']
     
+    file = request.files['image']
     if file.filename == '':
         return jsonify({'error': 'No image selected'}), 400
-        
+    
     try:
-        image_data = file.read()
-        waste_type, confidence = classify_waste_image(image_data, app.config["GOOGLE_VISION_API_KEY"])
+        # Process image for classification
+        waste_type, confidence = classify_waste_image(file)
         
-        # Get waste type from database or create if not exists
-        waste_type_obj = WasteType.query.filter_by(name=waste_type).first()
-        if not waste_type_obj:
-            # Default values based on typical waste categories
-            recyclable = waste_type.lower() in ['plastic', 'paper', 'glass', 'metal', 'cardboard']
-            carbon_impact = 2.0  # Default CO2 equivalent per kg
-            
-            if waste_type.lower() == 'plastic':
-                carbon_impact = 6.0
-            elif waste_type.lower() == 'paper':
-                carbon_impact = 1.5
-            elif waste_type.lower() == 'glass':
-                carbon_impact = 0.8
-            elif waste_type.lower() == 'metal':
-                carbon_impact = 4.0
-            elif waste_type.lower() == 'organic':
-                recyclable = True
-                carbon_impact = 0.5
-            
-            waste_type_obj = WasteType(
-                name=waste_type,
-                description=f"{waste_type} waste",
-                recyclable=recyclable,
-                carbon_impact=carbon_impact
-            )
-            db.session.add(waste_type_obj)
-            db.session.commit()
+        # Get location data if provided
+        latitude = request.form.get('latitude', type=float)
+        longitude = request.form.get('longitude', type=float)
+        location_name = request.form.get('location_name', '')
         
-        # Create a waste log entry
-        waste_log = WasteLog(
-            user_id=current_user.id,
-            waste_type_id=waste_type_obj.id,
-            weight=0.5,  # Default weight in kg
-            disposed_properly=True
-        )
-        db.session.add(waste_log)
-        
-        # Award points to the user for classification
-        points_earned = 10
-        current_user.add_points(points_earned)
+        # Get estimated weight if provided
+        weight = request.form.get('weight', type=float, default=0.5)
         
         # Calculate carbon savings
-        carbon_saved = calculate_carbon_savings(waste_type_obj, 0.5)
-        current_user.add_carbon_saved(carbon_saved)
+        carbon_saved = calculate_carbon_savings(waste_type, weight)
         
-        db.session.commit()
-        
-        return jsonify({
-            'waste_type': waste_type,
-            'confidence': confidence,
-            'recyclable': waste_type_obj.recyclable,
-            'points_earned': points_earned,
-            'carbon_saved': carbon_saved
-        })
-        
-    except Exception as e:
-        logging.error(f"Error classifying waste: {str(e)}")
-        return jsonify({'error': 'Failed to classify waste image'}), 500
-
-# Waste Map
-@app.route('/waste-map')
-@login_required
-def waste_map():
-    centers = RecyclingCenter.query.all()
-    return render_template('waste_map.html', 
-                          centers=centers, 
-                          google_maps_api_key=app.config["GOOGLE_MAPS_API_KEY"])
-
-@app.route('/api/recycling-centers', methods=['GET'])
-def api_recycling_centers():
-    try:
-        lat = float(request.args.get('lat', 0))
-        lng = float(request.args.get('lng', 0))
-        radius = float(request.args.get('radius', 10))  # km
-        
-        # Get centers from database
-        centers = RecyclingCenter.query.all()
-        
-        # If we have lat/lng, filter centers by distance
-        if lat != 0 and lng != 0:
-            nearby_centers = get_nearby_recycling_centers(lat, lng, radius, app.config["GOOGLE_MAPS_API_KEY"])
-            
-            # Add any new centers to the database
-            for center in nearby_centers:
-                if not RecyclingCenter.query.filter_by(name=center['name']).first():
-                    new_center = RecyclingCenter(
-                        name=center['name'],
-                        address=center['address'],
-                        latitude=center['latitude'],
-                        longitude=center['longitude'],
-                        description=center.get('description', ''),
-                        waste_types=center.get('waste_types', 'General Recycling'),
-                        operational_hours=center.get('hours', 'Not available')
-                    )
-                    db.session.add(new_center)
-            
-            db.session.commit()
-            
-            # Re-query to get all centers including the new ones
-            centers = RecyclingCenter.query.all()
-        
-        return jsonify([{
-            'id': center.id,
-            'name': center.name,
-            'address': center.address,
-            'latitude': center.latitude,
-            'longitude': center.longitude,
-            'description': center.description,
-            'waste_types': center.waste_types,
-            'operational_hours': center.operational_hours
-        } for center in centers])
-        
-    except Exception as e:
-        logging.error(f"Error fetching recycling centers: {str(e)}")
-        return jsonify({'error': 'Failed to fetch recycling centers'}), 500
-
-@app.route('/api/log-recycling', methods=['POST'])
-@login_required
-def api_log_recycling():
-    try:
-        data = request.json
-        center_id = data.get('center_id')
-        waste_type = data.get('waste_type')
-        weight = float(data.get('weight', 1.0))
-        
-        # Validate data
-        if not center_id or not waste_type:
-            return jsonify({'error': 'Missing required fields'}), 400
-            
-        center = RecyclingCenter.query.get(center_id)
-        if not center:
-            return jsonify({'error': 'Recycling center not found'}), 404
-            
-        # Calculate points and carbon savings
-        points_earned = int(weight * 20)  # 20 points per kg
-        
-        waste_type_obj = WasteType.query.filter_by(name=waste_type).first()
-        if not waste_type_obj:
-            waste_type_obj = WasteType(
-                name=waste_type,
-                recyclable=True,
-                carbon_impact=2.0  # Default impact
-            )
-            db.session.add(waste_type_obj)
-            db.session.commit()
-            
-        carbon_saved = calculate_carbon_savings(waste_type_obj, weight)
-            
-        # Create recycling activity record
-        activity = RecyclingActivity(
+        # Save the waste entry
+        waste_entry = WasteEntry(
             user_id=current_user.id,
-            center_id=center_id,
             waste_type=waste_type,
             weight=weight,
+            carbon_saved=carbon_saved,
+            latitude=latitude,
+            longitude=longitude,
+            location_name=location_name
+        )
+        
+        db.session.add(waste_entry)
+        
+        # Award points to the user
+        points_earned = 10 if waste_type == 'recyclable' else 5
+        current_user.add_points(points_earned)
+        
+        # Record the activity
+        activity = EcoActivity(
+            user_id=current_user.id,
+            activity_type="waste_classification",
             points_earned=points_earned,
-            carbon_saved=carbon_saved
+            carbon_saved=carbon_saved,
+            details=json.dumps({
+                "waste_type": waste_type,
+                "weight": weight,
+                "confidence": confidence
+            })
         )
         db.session.add(activity)
         
-        # Update user points and carbon saved
-        current_user.add_points(points_earned)
-        current_user.add_carbon_saved(carbon_saved)
-        
-        db.session.commit()
-        
-        # Check for achievements
-        total_points = current_user.points
-        total_carbon = current_user.carbon_saved
-        
-        achievements = []
-        
-        # Recycling milestones
-        if total_points >= 100 and not current_user.achievements.filter_by(name="Recycling Beginner").first():
-            achievement = Achievement.query.filter_by(name="Recycling Beginner").first()
-            if not achievement:
-                achievement = Achievement(
-                    name="Recycling Beginner",
-                    description="Earn 100 points through recycling activities",
-                    points_required=100,
-                    icon="fa-seedling"
-                )
-                db.session.add(achievement)
-                db.session.commit()
-            current_user.achievements.append(achievement)
-            achievements.append(achievement.name)
-            
-        if total_points >= 500 and not current_user.achievements.filter_by(name="Recycling Enthusiast").first():
-            achievement = Achievement.query.filter_by(name="Recycling Enthusiast").first()
-            if not achievement:
-                achievement = Achievement(
-                    name="Recycling Enthusiast",
-                    description="Earn 500 points through recycling activities",
-                    points_required=500,
-                    icon="fa-tree"
-                )
-                db.session.add(achievement)
-                db.session.commit()
-            current_user.achievements.append(achievement)
-            achievements.append(achievement.name)
-            
-        if total_carbon >= 50 and not current_user.achievements.filter_by(name="Climate Guardian").first():
-            achievement = Achievement.query.filter_by(name="Climate Guardian").first()
-            if not achievement:
-                achievement = Achievement(
-                    name="Climate Guardian",
-                    description="Save 50kg of CO2 through proper waste disposal",
-                    points_required=0,
-                    icon="fa-globe-americas"
-                )
-                db.session.add(achievement)
-                db.session.commit()
-            current_user.achievements.append(achievement)
-            achievements.append(achievement.name)
-            
         db.session.commit()
         
         return jsonify({
             'success': True,
-            'points_earned': points_earned,
+            'waste_type': waste_type,
+            'confidence': confidence,
             'carbon_saved': carbon_saved,
-            'new_achievements': achievements
+            'points_earned': points_earned,
+            'message': f'Successfully classified as {waste_type} waste!'
         })
         
     except Exception as e:
-        logging.error(f"Error logging recycling: {str(e)}")
-        return jsonify({'error': 'Failed to log recycling activity'}), 500
+        logger.error(f"Error in classification: {e}")
+        return jsonify({'error': str(e)}), 500
 
-# Analytics Dashboard
-@app.route('/analytics')
+# Waste Map Routes
+@app.route('/map')
+def waste_map():
+    # Get all recycling centers
+    centers = RecyclingCenter.query.all()
+    
+    # Convert centers to GeoJSON format
+    geojson_centers = {
+        "type": "FeatureCollection",
+        "features": [
+            {
+                "type": "Feature", 
+                "properties": {
+                    "id": center.id,
+                    "name": center.name,
+                    "address": center.address,
+                    "phone": center.phone,
+                    "website": center.website,
+                    "accepted_types": center.accepted_types
+                },
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [center.longitude, center.latitude]
+                }
+            } for center in centers
+        ]
+    }
+    
+    return render_template('map.html', 
+                          centers=json.dumps(geojson_centers),
+                          google_maps_api_key=app.config["GOOGLE_MAPS_API_KEY"])
+
+@app.route('/api/centers')
+def get_centers():
+    # Get latitude and longitude from request
+    lat = request.args.get('lat', type=float)
+    lng = request.args.get('lng', type=float)
+    radius = request.args.get('radius', default=10, type=float)  # km
+    
+    if not lat or not lng:
+        return jsonify({"error": "Latitude and longitude required"}), 400
+    
+    try:
+        # Use helper function to find nearby centers
+        centers = find_nearby_centers(lat, lng, radius)
+        return jsonify(centers)
+    except Exception as e:
+        logger.error(f"Error finding centers: {e}")
+        return jsonify({"error": str(e)}), 500
+
+# Dashboard Routes
+@app.route('/dashboard')
 @login_required
-def analytics():
-    # User stats
-    user_waste_logs = WasteLog.query.filter_by(user_id=current_user.id).all()
-    user_recycling = RecyclingActivity.query.filter_by(user_id=current_user.id).all()
+def dashboard():
+    # Get user's waste statistics
+    user_stats = {
+        "total_entries": WasteEntry.query.filter_by(user_id=current_user.id).count(),
+        "total_weight": db.session.query(db.func.sum(WasteEntry.weight)).filter_by(user_id=current_user.id).scalar() or 0,
+        "total_carbon_saved": db.session.query(db.func.sum(WasteEntry.carbon_saved)).filter_by(user_id=current_user.id).scalar() or 0,
+        "points": current_user.points,
+        "level": current_user.level
+    }
     
-    # Calculate waste type distribution
-    waste_types = {}
-    for log in user_waste_logs:
-        waste_type = log.waste_type.name
-        if waste_type in waste_types:
-            waste_types[waste_type] += 1
-        else:
-            waste_types[waste_type] = 1
-            
-    # Calculate carbon savings over time
-    carbon_data = []
-    now = datetime.utcnow()
-    for i in range(7):
-        date = now - timedelta(days=i)
-        date_start = datetime(date.year, date.month, date.day, 0, 0, 0)
-        date_end = datetime(date.year, date.month, date.day, 23, 59, 59)
-        
-        logs = WasteLog.query.filter(
-            WasteLog.user_id == current_user.id,
-            WasteLog.timestamp >= date_start,
-            WasteLog.timestamp <= date_end
-        ).all()
-        
-        activities = RecyclingActivity.query.filter(
-            RecyclingActivity.user_id == current_user.id,
-            RecyclingActivity.timestamp >= date_start,
-            RecyclingActivity.timestamp <= date_end
-        ).all()
-        
-        daily_carbon = sum([log.carbon_impact() for log in logs]) + sum([act.carbon_saved for act in activities])
-        carbon_data.append({
-            'date': date.strftime('%Y-%m-%d'),
-            'carbon_saved': daily_carbon
-        })
+    # Get waste type distribution
+    waste_types = db.session.query(
+        WasteEntry.waste_type, 
+        db.func.count(WasteEntry.id)
+    ).filter_by(user_id=current_user.id).group_by(WasteEntry.waste_type).all()
     
-    # Get leaderboard data
+    waste_distribution = {waste_type: count for waste_type, count in waste_types}
+    
+    # Get recent entries
+    recent_entries = WasteEntry.query.filter_by(user_id=current_user.id).order_by(WasteEntry.timestamp.desc()).limit(5).all()
+    
+    # Get community stats
+    community_stats = {
+        "total_users": User.query.count(),
+        "total_waste_entries": WasteEntry.query.count(),
+        "total_carbon_saved": db.session.query(db.func.sum(WasteEntry.carbon_saved)).scalar() or 0
+    }
+    
+    # Get leaderboard
     leaderboard = User.query.order_by(User.points.desc()).limit(10).all()
     
-    return render_template('analytics.html', 
-                          waste_types=waste_types, 
-                          carbon_data=carbon_data,
-                          leaderboard=leaderboard,
-                          user_waste_logs=len(user_waste_logs),
-                          user_recycling=len(user_recycling),
-                          total_points=current_user.points,
-                          total_carbon_saved=current_user.carbon_saved)
+    return render_template('dashboard.html', 
+                          user_stats=user_stats,
+                          waste_distribution=waste_distribution,
+                          recent_entries=recent_entries,
+                          community_stats=community_stats,
+                          leaderboard=leaderboard)
 
-# User Profile
+@app.route('/api/user/stats')
+@login_required
+def get_user_stats():
+    # Get monthly waste statistics for current user
+    monthly_stats = db.session.query(
+        db.func.strftime('%Y-%m', WasteEntry.timestamp).label('month'),
+        db.func.sum(WasteEntry.weight).label('weight'),
+        db.func.sum(WasteEntry.carbon_saved).label('carbon_saved')
+    ).filter_by(user_id=current_user.id)\
+     .group_by('month')\
+     .order_by('month')\
+     .all()
+    
+    result = {
+        'labels': [m[0] for m in monthly_stats],
+        'weights': [float(m[1]) if m[1] else 0 for m in monthly_stats],
+        'carbon_saved': [float(m[2]) if m[2] else 0 for m in monthly_stats]
+    }
+    
+    return jsonify(result)
+
+# User Profile Route
 @app.route('/profile')
 @login_required
 def profile():
-    user_achievements = current_user.achievements.all()
-    all_achievements = Achievement.query.all()
+    # Get user's activity history
+    activities = EcoActivity.query.filter_by(user_id=current_user.id).order_by(EcoActivity.timestamp.desc()).limit(20).all()
     
-    # Get recent activities
-    recent_logs = WasteLog.query.filter_by(user_id=current_user.id).order_by(WasteLog.timestamp.desc()).limit(5).all()
-    recent_recycling = RecyclingActivity.query.filter_by(user_id=current_user.id).order_by(RecyclingActivity.timestamp.desc()).limit(5).all()
+    # Calculate progress to next level
+    next_level_points = current_user.level * 100
+    progress_percentage = (current_user.points / next_level_points) * 100
+    
+    # Get badges (placeholder for now)
+    badges = [
+        {"name": "Recycling Novice", "earned": True, "icon": "award"},
+        {"name": "Waste Warrior", "earned": current_user.level >= 2, "icon": "shield"},
+        {"name": "Carbon Saver", "earned": db.session.query(db.func.sum(WasteEntry.carbon_saved)).filter_by(user_id=current_user.id).scalar() > 10, "icon": "leaf"},
+        {"name": "SDG Champion", "earned": current_user.level >= 5, "icon": "globe"}
+    ]
     
     return render_template('profile.html', 
                           user=current_user,
-                          user_achievements=user_achievements,
-                          all_achievements=all_achievements,
-                          recent_logs=recent_logs,
-                          recent_recycling=recent_recycling)
-
-# Carbon Tracker
-@app.route('/carbon-tracker')
-@login_required
-def carbon_tracker():
-    # Get user's carbon savings
-    total_carbon_saved = current_user.carbon_saved
-    
-    # Calculate equivalent impact
-    trees_saved = total_carbon_saved / 21  # Approx. 21kg CO2 per tree per year
-    car_km_saved = total_carbon_saved / 0.12  # Approx. 0.12kg CO2 per km
-    
-    # Get monthly carbon data
-    now = datetime.utcnow()
-    monthly_data = []
-    
-    for i in range(6):
-        month_date = now - timedelta(days=30*i)
-        month_start = datetime(month_date.year, month_date.month, 1)
-        if month_date.month == 12:
-            month_end = datetime(month_date.year + 1, 1, 1) - timedelta(seconds=1)
-        else:
-            month_end = datetime(month_date.year, month_date.month + 1, 1) - timedelta(seconds=1)
-        
-        # Get waste logs for this month
-        logs = WasteLog.query.filter(
-            WasteLog.user_id == current_user.id,
-            WasteLog.timestamp >= month_start,
-            WasteLog.timestamp <= month_end
-        ).all()
-        
-        # Get recycling activities for this month
-        activities = RecyclingActivity.query.filter(
-            RecyclingActivity.user_id == current_user.id,
-            RecyclingActivity.timestamp >= month_start,
-            RecyclingActivity.timestamp <= month_end
-        ).all()
-        
-        # Calculate carbon saved
-        carbon_from_logs = sum([log.carbon_impact() for log in logs])
-        carbon_from_activities = sum([act.carbon_saved for act in activities])
-        
-        monthly_data.append({
-            'month': month_date.strftime('%B %Y'),
-            'carbon_saved': carbon_from_logs + carbon_from_activities
-        })
-    
-    return render_template('carbon_tracker.html',
-                          total_carbon_saved=total_carbon_saved,
-                          trees_saved=trees_saved,
-                          car_km_saved=car_km_saved,
-                          monthly_data=monthly_data)
-
-# Sustainable Goals Information
-@app.route('/sustainable-goals')
-def sustainable_goals():
-    return render_template('sustainable_goals.html')
+                          activities=activities,
+                          progress_percentage=progress_percentage,
+                          next_level_points=next_level_points,
+                          badges=badges)
 
 # Error handlers
 @app.errorhandler(404)
-def page_not_found(e):
+def not_found_error(error):
     return render_template('404.html'), 404
 
 @app.errorhandler(500)
-def server_error(e):
+def internal_error(error):
+    db.session.rollback()
     return render_template('500.html'), 500

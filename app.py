@@ -1,19 +1,19 @@
 import os
 import logging
-from flask import Flask, render_template
+from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
 from flask_login import LoginManager
 
-# Configure logging
+# Set up logging
 logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 class Base(DeclarativeBase):
     pass
 
-# Initialize extensions
+# Initialize database
 db = SQLAlchemy(model_class=Base)
-login_manager = LoginManager()
 
 # Create the app
 app = Flask(__name__)
@@ -27,28 +27,28 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
 }
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-# Google API Keys
-app.config["GOOGLE_MAPS_API_KEY"] = os.environ.get("GOOGLE_MAPS_API_KEY", "")
+# Set up Google Cloud API keys
 app.config["GOOGLE_VISION_API_KEY"] = os.environ.get("GOOGLE_VISION_API_KEY", "")
+app.config["GOOGLE_MAPS_API_KEY"] = os.environ.get("GOOGLE_MAPS_API_KEY", "")
 
-# Initialize the app with extensions
+# Initialize the database with the app
 db.init_app(app)
+
+# Set up login manager
+login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
+# Import models and create tables
 with app.app_context():
-    # Import models to create tables
     import models
     db.create_all()
+    logger.info("Database tables created")
 
-# Error handlers
-@app.errorhandler(404)
-def page_not_found(e):
-    return render_template('404.html'), 404
+# The user_loader is defined in models.py
+# No need to duplicate it here
 
-@app.errorhandler(500)
-def server_error(e):
-    return render_template('500.html'), 500
-
-# Import routes after app context and error handlers are initialized
+# Import routes directly (we'll use blueprints in a future update)
 import routes
+
+logger.info("Application initialized successfully")

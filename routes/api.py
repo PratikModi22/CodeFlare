@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify, current_app
 from flask_login import login_required, current_user
 from app import db
-from models import User, WasteRecord, WasteCategory, RecyclingCenter, Badge
+from models import User, WasteEntry, RecyclingCenter, EcoActivity
 from utils.vision_api import classify_waste_image
 from utils.maps_api import find_nearby_centers
 from utils.carbon_calculator import calculate_carbon_impact

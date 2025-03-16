@@ -1,78 +1,141 @@
-from models import WasteCategory
+import math
+import logging
 
-def calculate_carbon_impact(category_id, quantity, disposed_properly):
+logger = logging.getLogger(__name__)
+
+# Carbon emissions saved per kg of waste diverted from landfill
+# Values are in kg CO2e (carbon dioxide equivalent) per kg of waste
+CARBON_SAVINGS = {
+    'recyclable': {
+        'plastic': 2.5,      # Average for plastic
+        'paper': 1.1,        # Paper/cardboard
+        'glass': 0.3,        # Glass
+        'metal': 4.0,        # Aluminum/metal
+        'general': 1.5       # General recyclable
+    },
+    'organic': {
+        'food': 0.8,         # Food waste when composted
+        'garden': 0.5,       # Garden waste when composted
+        'general': 0.6       # General organic waste
+    },
+    'hazardous': {
+        'battery': 12.0,     # Batteries
+        'electronic': 20.0,  # E-waste
+        'general': 5.0       # General hazardous waste
+    },
+    'non-recyclable': 0.0    # No carbon saved for non-recyclable waste
+}
+
+def calculate_carbon_savings(waste_type, weight=1.0, specific_type=None):
     """
-    Calculate the carbon impact of a waste disposal action
+    Calculate the carbon emissions saved by proper waste disposal
     
     Args:
-        category_id: ID of the waste category
-        quantity: Amount of waste in kg
-        disposed_properly: Whether waste was disposed properly
+        waste_type (str): Type of waste (recyclable, organic, hazardous, non-recyclable)
+        weight (float): Weight of waste in kg
+        specific_type (str, optional): Specific subtype of waste
         
     Returns:
-        float: Carbon impact in kg CO2 equivalent (negative means carbon saved)
+        float: Carbon savings in kg CO2e
     """
     try:
-        # Get category carbon factor
-        from app import db
-        category = WasteCategory.query.get(category_id)
-        
-        if not category:
-            # Default factor if category not found
-            carbon_factor = 2.5
+        if waste_type == 'non-recyclable':
+            return 0.0
+            
+        if waste_type not in CARBON_SAVINGS:
+            logger.warning(f"Unknown waste type: {waste_type}")
+            return 0.0
+            
+        if isinstance(CARBON_SAVINGS[waste_type], dict):
+            # If we have a specific type and it's in our dictionary
+            if specific_type and specific_type in CARBON_SAVINGS[waste_type]:
+                carbon_factor = CARBON_SAVINGS[waste_type][specific_type]
+            else:
+                # Use the general factor for this waste type
+                carbon_factor = CARBON_SAVINGS[waste_type]['general']
         else:
-            carbon_factor = category.carbon_factor
+            carbon_factor = CARBON_SAVINGS[waste_type]
+            
+        # Calculate savings
+        savings = weight * carbon_factor
         
-        # Base calculation - how much carbon would be emitted if not recycled
-        base_impact = carbon_factor * quantity
-        
-        # If recyclable waste is disposed properly, we save carbon
-        if category.recyclable and disposed_properly:
-            # Calculate carbon saved (up to 70% for recyclable items)
-            carbon_saved = base_impact * 0.7
-            return -carbon_saved  # Negative value represents carbon saved
-        
-        # If not recycled or not recyclable, return the positive impact (emissions)
-        return base_impact * 0.3 if disposed_properly else base_impact
+        return round(savings, 2)
         
     except Exception as e:
-        # Default value in case of error
+        logger.error(f"Error calculating carbon savings: {str(e)}")
         return 0.0
 
-def estimate_carbon_footprint(waste_records):
+def get_carbon_equivalents(carbon_saved):
     """
-    Estimate total carbon footprint based on user's waste records
+    Get real-world equivalents for carbon savings
     
     Args:
-        waste_records: List of WasteRecord objects
+        carbon_saved (float): Carbon saved in kg CO2e
         
     Returns:
-        dict: Carbon statistics including total, saved, and net impact
+        dict: Equivalents in various real-world terms
     """
-    total_emissions = 0.0
-    total_savings = 0.0
-    
-    for record in waste_records:
-        impact = record.carbon_impact
+    try:
+        equivalents = {
+            'driving': round(carbon_saved / 0.2, 1),  # km not driven in average car
+            'tree_days': round(carbon_saved / 0.022, 1),  # days of tree absorbing CO2
+            'phone_charges': round(carbon_saved / 0.005, 0),  # smartphone charges
+            'light_bulb_hours': round(carbon_saved / 0.01, 0),  # hours of LED light bulb
+        }
         
-        if impact < 0:
-            # Negative impact means carbon saved
-            total_savings += abs(impact)
-        else:
-            # Positive impact means carbon emitted
-            total_emissions += impact
+        return equivalents
+        
+    except Exception as e:
+        logger.error(f"Error calculating carbon equivalents: {str(e)}")
+        return {
+            'driving': 0,
+            'tree_days': 0,
+            'phone_charges': 0,
+            'light_bulb_hours': 0
+        }
+
+def calculate_household_footprint(people=1, has_car=True, diet_type='mixed', recycling_level='medium'):
+    """
+    Calculate approximate annual carbon footprint for a household
     
-    # Calculate net impact
-    net_impact = total_emissions - total_savings
-    
-    # Equivalent metrics for visualization
-    trees_equivalent = total_savings / 21.0  # One tree absorbs ~21kg CO2 per year
-    car_km_equivalent = total_savings / 0.2  # ~0.2kg CO2 per km driven
-    
-    return {
-        'total_emissions': total_emissions,
-        'total_savings': total_savings,
-        'net_impact': net_impact,
-        'trees_equivalent': trees_equivalent,
-        'car_km_equivalent': car_km_equivalent
-    }
+    Args:
+        people (int): Number of people in household
+        has_car (bool): Whether the household has a car
+        diet_type (str): Type of diet (vegan, vegetarian, mixed, meat-heavy)
+        recycling_level (str): Level of recycling (none, low, medium, high)
+        
+    Returns:
+        float: Estimated carbon footprint in tonnes CO2e per year
+    """
+    try:
+        # Base footprint per person (tonnes CO2e/year)
+        base_per_person = 5.0
+        
+        # Adjustment factors
+        car_factor = 1.5 if has_car else 1.0
+        
+        diet_factors = {
+            'vegan': 0.8,
+            'vegetarian': 0.9,
+            'mixed': 1.0,
+            'meat-heavy': 1.2
+        }
+        
+        recycling_factors = {
+            'none': 1.1,
+            'low': 1.05,
+            'medium': 1.0,
+            'high': 0.9
+        }
+        
+        # Calculate total footprint
+        diet_factor = diet_factors.get(diet_type, 1.0)
+        recycling_factor = recycling_factors.get(recycling_level, 1.0)
+        
+        footprint = people * base_per_person * car_factor * diet_factor * recycling_factor
+        
+        return round(footprint, 1)
+        
+    except Exception as e:
+        logger.error(f"Error calculating household footprint: {str(e)}")
+        return people * 5.0  # Fallback to simple calculation

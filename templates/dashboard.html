@@ -1,0 +1,262 @@
+{% extends "layout.html" %}
+
+{% block title %}Dashboard - EcoSort{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <h1 class="mb-4">Your Dashboard</h1>
+    
+    <!-- User Stats Overview -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-3">
+            <div class="card h-100 dashboard-card border-primary">
+                <div class="card-body text-center">
+                    <i class="fas fa-trophy text-primary mb-3" style="font-size: 2.5rem;"></i>
+                    <h3 class="dashboard-stat">{{ user_stats.points }}</h3>
+                    <p class="text-muted">Total Points</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100 dashboard-card border-success">
+                <div class="card-body text-center">
+                    <i class="fas fa-recycle text-success mb-3" style="font-size: 2.5rem;"></i>
+                    <h3 class="dashboard-stat">{{ user_stats.total_entries }}</h3>
+                    <p class="text-muted">Waste Entries</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100 dashboard-card border-info">
+                <div class="card-body text-center">
+                    <i class="fas fa-weight-hanging text-info mb-3" style="font-size: 2.5rem;"></i>
+                    <h3 class="dashboard-stat">{{ "%.1f"|format(user_stats.total_weight) }}</h3>
+                    <p class="text-muted">kg of Waste</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100 dashboard-card border-warning">
+                <div class="card-body text-center">
+                    <i class="fas fa-leaf text-warning mb-3" style="font-size: 2.5rem;"></i>
+                    <h3 class="dashboard-stat">{{ "%.1f"|format(user_stats.total_carbon_saved) }}</h3>
+                    <p class="text-muted">kg CO₂ Saved</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Level Progress -->
+    <div class="card mb-5">
+        <div class="card-header bg-primary text-white">
+            <h2 class="h5 mb-0">Level Progress</h2>
+        </div>
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-2 text-center">
+                    <div class="level-badge mb-4">{{ user_stats.level }}</div>
+                </div>
+                <div class="col-md-8">
+                    <h4>Level {{ user_stats.level }} - {{ user_stats.points }} / {{ user_stats.level * 100 }} points</h4>
+                    <div class="progress progress-thin">
+                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ progress_percentage }}%" aria-valuenow="{{ progress_percentage }}" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                    <p class="text-muted mt-2">Earn {{ (user_stats.level * 100) - user_stats.points }} more points to reach Level {{ user_stats.level + 1 }}</p>
+                </div>
+                <div class="col-md-2 text-center">
+                    <div class="level-badge bg-light text-dark mb-4">{{ user_stats.level + 1 }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Charts Section -->
+    <div class="row mb-5">
+        <div class="col-md-6">
+            <div class="card h-100 dashboard-card">
+                <div class="card-header">
+                    <h2 class="h5 mb-0">Waste by Type</h2>
+                </div>
+                <div class="card-body">
+                    {% if waste_distribution %}
+                    <canvas id="wasteDistributionChart" width="100%" height="250"></canvas>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-chart-pie text-muted mb-3" style="font-size: 3rem;"></i>
+                        <p class="lead text-muted">No waste data yet</p>
+                        <a href="{{ url_for('classify_page') }}" class="btn btn-primary">
+                            <i class="fas fa-plus-circle me-2"></i>Add Waste Entry
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card h-100 dashboard-card">
+                <div class="card-header">
+                    <h2 class="h5 mb-0">Carbon Savings Over Time</h2>
+                </div>
+                <div class="card-body">
+                    {% if user_stats.total_entries > 0 %}
+                    <canvas id="carbonTimeChart" width="100%" height="250"></canvas>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-chart-line text-muted mb-3" style="font-size: 3rem;"></i>
+                        <p class="lead text-muted">No carbon data yet</p>
+                        <a href="{{ url_for('classify_page') }}" class="btn btn-primary">
+                            <i class="fas fa-plus-circle me-2"></i>Add Waste Entry
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Community Stats -->
+    <div class="card mb-5">
+        <div class="card-header bg-info text-white">
+            <h2 class="h5 mb-0">Community Impact</h2>
+        </div>
+        <div class="card-body">
+            <div class="row text-center">
+                <div class="col-md-4">
+                    <i class="fas fa-users text-info mb-2" style="font-size: 2rem;"></i>
+                    <h3 class="dashboard-stat">{{ community_stats.total_users }}</h3>
+                    <p class="text-muted">Community Members</p>
+                </div>
+                <div class="col-md-4">
+                    <i class="fas fa-trash-alt text-info mb-2" style="font-size: 2rem;"></i>
+                    <h3 class="dashboard-stat">{{ community_stats.total_waste_entries }}</h3>
+                    <p class="text-muted">Total Waste Entries</p>
+                </div>
+                <div class="col-md-4">
+                    <i class="fas fa-globe-americas text-info mb-2" style="font-size: 2rem;"></i>
+                    <h3 class="dashboard-stat">{{ "%.1f"|format(community_stats.total_carbon_saved) }}</h3>
+                    <p class="text-muted">kg CO₂ Saved</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Leaderboard -->
+    <div class="card">
+        <div class="card-header bg-success text-white">
+            <h2 class="h5 mb-0">Leaderboard</h2>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>User</th>
+                            <th>Level</th>
+                            <th>Points</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in leaderboard %}
+                        <tr {% if user.id == current_user.id %}class="table-primary"{% endif %}>
+                            <td>{{ loop.index }}</td>
+                            <td>
+                                {% if user.id == current_user.id %}
+                                    <strong>{{ user.username }} (You)</strong>
+                                {% else %}
+                                    {{ user.username }}
+                                {% endif %}
+                            </td>
+                            <td>{{ user.level }}</td>
+                            <td>{{ user.points }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center">No users yet</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Initialize charts if data exists
+    document.addEventListener('DOMContentLoaded', function() {
+        {% if waste_distribution %}
+        // Waste Distribution Chart
+        const wasteCanvas = document.getElementById('wasteDistributionChart');
+        const wasteTypes = {{ waste_distribution|tojson }};
+        
+        const wasteLabels = Object.keys(wasteTypes);
+        const wasteData = Object.values(wasteTypes);
+        
+        new Chart(wasteCanvas, {
+            type: 'pie',
+            data: {
+                labels: wasteLabels,
+                datasets: [{
+                    data: wasteData,
+                    backgroundColor: [
+                        'rgba(75, 192, 192, 0.7)',
+                        'rgba(54, 162, 235, 0.7)',
+                        'rgba(255, 206, 86, 0.7)',
+                        'rgba(255, 99, 132, 0.7)',
+                        'rgba(153, 102, 255, 0.7)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+        {% endif %}
+        
+        {% if user_stats.total_entries > 0 %}
+        // Carbon Savings Time Chart
+        fetch('/api/user/stats')
+            .then(response => response.json())
+            .then(data => {
+                const carbonCanvas = document.getElementById('carbonTimeChart');
+                
+                new Chart(carbonCanvas, {
+                    type: 'line',
+                    data: {
+                        labels: data.labels,
+                        datasets: [{
+                            label: 'Carbon Saved (kg CO₂)',
+                            data: data.carbon_saved,
+                            borderColor: 'rgba(40, 167, 69, 1)',
+                            backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                            fill: true,
+                            tension: 0.3
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching stats:', error);
+            });
+        {% endif %}
+    });
+</script>
+{% endblock %}

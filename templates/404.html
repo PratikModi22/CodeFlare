@@ -1,12 +1,23 @@
-{% extends 'simple_layout.html' %}
+{% extends "layout.html" %}
 
-{% block title %}Page Not Found - EcoTrack{% endblock %}
+{% block title %}Page Not Found - EcoSort{% endblock %}
 
 {% block content %}
-<div class="text-center mt-5">
-    <h1 class="display-1 fw-bold">404</h1>
-    <p class="fs-3">Page Not Found</p>
-    <p class="lead">The page you are looking for doesn't exist or has been moved.</p>
-    <a href="/" class="btn btn-primary">Go Home</a>
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 text-center">
+            <img src="https://i.imgur.com/UjqeUzp.png" alt="Page Not Found" class="img-fluid mb-5" style="max-width: 300px;">
+            <h1 class="display-4 mb-4">Oops! Page Not Found</h1>
+            <p class="lead mb-4">We couldn't find the page you were looking for. It might have been removed, renamed, or didn't exist in the first place.</p>
+            <div class="d-flex flex-wrap justify-content-center gap-3">
+                <a href="{{ url_for('index') }}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-home me-2"></i>Go Home
+                </a>
+                <a href="javascript:history.back()" class="btn btn-outline-secondary btn-lg">
+                    <i class="fas fa-arrow-left me-2"></i>Go Back
+                </a>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

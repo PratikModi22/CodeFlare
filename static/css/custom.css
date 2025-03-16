@@ -1,295 +1,202 @@
-/* Custom styles for the EcoTrack Waste Management App */
+/* Custom CSS to complement Bootstrap dark theme */
 
-/* Global styles */
+/* General styling */
 body {
-    font-family: 'Roboto', sans-serif;
-    transition: all 0.3s ease;
+    padding-top: 56px;  /* For fixed navbar */
+    min-height: 100vh;
 }
 
-.navbar-brand {
-    font-weight: 700;
+.main-content {
+    min-height: calc(100vh - 150px);
 }
 
-.eco-icon {
+.footer {
+    margin-top: auto;
+    padding: 20px 0;
+}
+
+/* SDG colors */
+.sdg11-color {
+    color: var(--bs-warning);
+}
+
+.sdg12-color {
     color: var(--bs-success);
 }
 
-.page-header {
-    padding: 2rem 0;
-    margin-bottom: 2rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+.sdg13-color {
+    color: var(--bs-info);
 }
 
-/* Cards with hover effect */
-.feature-card {
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    border-left: 4px solid var(--bs-success);
+/* Waste type colors */
+.recyclable {
+    color: #4CAF50;
 }
 
-.feature-card:hover {
+.organic {
+    color: #8BC34A;
+}
+
+.hazardous {
+    color: #F44336;
+}
+
+.non-recyclable {
+    color: #9E9E9E;
+}
+
+/* Badges */
+.badge-recyclable {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.badge-organic {
+    background-color: #8BC34A;
+    color: white;
+}
+
+.badge-hazardous {
+    background-color: #F44336;
+    color: white;
+}
+
+.badge-non-recyclable {
+    background-color: #9E9E9E;
+    color: white;
+}
+
+/* Dashboard cards */
+.stat-card {
+    transition: transform 0.3s;
+}
+
+.stat-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
 }
 
-/* SDG Goals Styling */
-.sdg-card {
-    height: 100%;
-    transition: transform 0.3s ease;
-}
-
-.sdg-card:hover {
-    transform: scale(1.02);
-}
-
-.sdg-icon {
-    font-size: 2.5rem;
-    margin-bottom: 1rem;
-}
-
-.sdg-11 {
-    border-left: 4px solid #fd9d24;
-}
-
-.sdg-11 .sdg-icon {
-    color: #fd9d24;
-}
-
-.sdg-12 {
-    border-left: 4px solid #bf8b2e;
-}
-
-.sdg-12 .sdg-icon {
-    color: #bf8b2e;
-}
-
-.sdg-13 {
-    border-left: 4px solid #3f7e44;
-}
-
-.sdg-13 .sdg-icon {
-    color: #3f7e44;
-}
-
-/* Waste Classification Page */
-#drop-area {
-    border: 2px dashed var(--bs-info);
-    border-radius: 0.5rem;
-    padding: 2rem;
-    text-align: center;
-    transition: all 0.3s ease;
-}
-
-#drop-area.highlight {
-    border-color: var(--bs-success);
-    background-color: rgba(40, 167, 69, 0.1);
-}
-
-.preview-container {
-    max-width: 100%;
-    overflow: hidden;
-    border-radius: 0.5rem;
-    margin-top: 1rem;
-}
-
-#image-preview {
-    max-width: 100%;
-    max-height: 300px;
-    border-radius: 0.5rem;
-}
-
-/* Waste Map Styles */
+/* Map styling */
 #map {
     height: 500px;
     width: 100%;
-    border-radius: 0.5rem;
-    margin-bottom: 1rem;
+    border-radius: 8px;
 }
 
-.recycling-center-card {
-    transition: all 0.3s ease;
-}
-
-.recycling-center-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-}
-
-.position-medal {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    font-weight: bold;
-}
-
-.gold {
-    background-color: #ffd700;
-    color: #000;
-}
-
-.silver {
-    background-color: #c0c0c0;
-    color: #000;
-}
-
-.bronze {
-    background-color: #cd7f32;
-    color: #000;
-}
-
-/* Carbon Tracker Styles */
-.impact-card {
-    transition: all 0.3s ease;
-    border-radius: 0.5rem;
-    overflow: hidden;
-}
-
-.impact-icon {
-    font-size: 2rem;
-    margin-bottom: 1rem;
-}
-
-.impact-value {
-    font-size: 2rem;
-    font-weight: 700;
-}
-
-/* Achievement Badges */
-.achievement-badge {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 70px;
-    height: 70px;
-    border-radius: 50%;
-    margin: 0 auto 1rem;
-    background-color: var(--bs-dark);
-    color: var(--bs-warning);
-    border: 3px solid var(--bs-warning);
-    transition: all 0.3s ease;
-    animation: fadeIn 0.5s ease-out forwards;
-}
-
-.achievement-badge.locked {
-    border-color: var(--bs-secondary);
-    color: var(--bs-secondary);
-}
-
-.achievement-badge:hover {
-    transform: scale(1.1);
-}
-
-.achievement-hover {
-    transform: scale(1.1);
-    box-shadow: 0 0 15px rgba(255, 193, 7, 0.5);
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* Floating points animation */
-.floating-points {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 2rem;
-    font-weight: bold;
-    color: var(--bs-warning);
-    z-index: 9999;
-    opacity: 0;
-    pointer-events: none;
-}
-
-.floating-points.animate {
-    animation: floatPoints 2s ease-out forwards;
-}
-
-@keyframes floatPoints {
-    0% {
-        opacity: 0;
-        transform: translate(-50%, -50%) scale(0.5);
-    }
-    20% {
-        opacity: 1;
-        transform: translate(-50%, -50%) scale(1.2);
-    }
-    80% {
-        opacity: 1;
-        transform: translate(-50%, -100px) scale(1);
-    }
-    100% {
-        opacity: 0;
-        transform: translate(-50%, -150px) scale(0.8);
-    }
-}
-
-/* Info window for maps */
-.info-window {
-    min-width: 200px;
+.map-info-window {
+    color: #212529;
     max-width: 300px;
 }
 
-/* Avatar styles */
-.initials-avatar {
+/* Image upload area */
+.upload-area {
+    border: 2px dashed var(--bs-secondary);
+    border-radius: 8px;
+    padding: 30px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.upload-area:hover {
+    border-color: var(--bs-primary);
+    background-color: rgba(var(--bs-primary-rgb), 0.05);
+}
+
+.upload-area.active {
+    border-color: var(--bs-success);
+    background-color: rgba(var(--bs-success-rgb), 0.05);
+}
+
+/* Preview image */
+.image-preview {
+    max-width: 100%;
+    max-height: 300px;
+    margin: 20px auto;
+    border-radius: 8px;
+    display: block;
+}
+
+/* Carbon footprint visualization */
+.carbon-progress {
+    height: 10px;
+}
+
+/* User profile */
+.profile-header {
+    background-color: rgba(var(--bs-dark-rgb), 0.8);
+    padding: 30px 0;
+    border-radius: 8px;
+    margin-bottom: 30px;
+}
+
+.profile-avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background-color: var(--bs-primary);
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
+    margin: 0 auto 20px;
+    font-size: 48px;
     color: white;
+}
+
+.badge-icon {
+    font-size: 24px;
+    margin-bottom: 10px;
+}
+
+.badge-earned {
+    opacity: 1;
+}
+
+.badge-unearned {
+    opacity: 0.3;
+}
+
+/* Animations */
+.fade-in {
+    animation: fadeIn 0.5s;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Loading spinner */
+.loading-spinner {
+    display: flex;
+    justify-content: center;
+    padding: 30px;
+}
+
+/* Leaderboard */
+.leaderboard-item {
+    transition: all 0.2s;
+}
+
+.leaderboard-item:hover {
+    background-color: rgba(var(--bs-primary-rgb), 0.1);
+}
+
+.leaderboard-rank {
     font-weight: bold;
+    width: 30px;
 }
 
-/* Achievement animation */
-.achievement-animation {
-    animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-    0% {
-        transform: scale(1);
+/* For mobile responsiveness */
+@media (max-width: 768px) {
+    .main-content {
+        padding-top: 15px;
     }
-    50% {
-        transform: scale(1.1);
+    
+    .upload-area {
+        padding: 15px;
     }
-    100% {
-        transform: scale(1);
+    
+    #map {
+        height: 300px;
     }
-}
-
-/* Footer */
-.footer {
-    margin-top: 4rem;
-    padding: 2rem 0;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-/* Error Pages */
-.error-page {
-    text-align: center;
-    padding: 5rem 0;
-}
-
-.error-code {
-    font-size: 8rem;
-    font-weight: 700;
-    margin-bottom: 1rem;
-}
-
-.error-icon {
-    font-size: 5rem;
-    margin-bottom: 2rem;
-    color: var(--bs-danger);
 }

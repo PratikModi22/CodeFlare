@@ -1,313 +1,214 @@
-{% extends 'layout.html' %}
+{% extends "layout.html" %}
 
-{% block title %}EcoTrack - Sustainable Waste Management{% endblock %}
+{% block title %}EcoSort - Sustainable Waste Management{% endblock %}
 
 {% block content %}
-<div class="jumbotron bg-dark p-4 rounded">
-    <div class="row align-items-center">
-        <div class="col-md-8">
-            <h1 class="display-4">Track, Recycle, Impact</h1>
-            <p class="lead">Join our mission to create a sustainable future through smart waste management.</p>
-            <p>EcoTrack helps you classify waste, find recycling centers, and track your environmental impact.</p>
-            {% if not current_user.is_authenticated %}
-            <div class="mt-4">
-                <a href="{{ url_for('register') }}" class="btn btn-success btn-lg me-2">
-                    <i class="fas fa-user-plus me-2"></i>Get Started
-                </a>
-                <a href="{{ url_for('login') }}" class="btn btn-outline-light btn-lg">
-                    <i class="fas fa-sign-in-alt me-2"></i>Login
-                </a>
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6 mb-5 mb-lg-0">
+                <h1 class="display-4 fw-bold mb-4 fade-in-up">Sustainable Waste Management</h1>
+                <p class="lead mb-4 fade-in-up">EcoSort helps you classify waste, find recycling centers, and track your environmental impact - all while contributing to a more sustainable future.</p>
+                <div class="d-flex flex-wrap gap-3 fade-in-up">
+                    {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('classify_page') }}" class="btn btn-success btn-lg">
+                        <i class="fas fa-camera me-2"></i>Classify Waste
+                    </a>
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-outline-light btn-lg">
+                        <i class="fas fa-chart-line me-2"></i>View Dashboard
+                    </a>
+                    {% else %}
+                    <a href="{{ url_for('register') }}" class="btn btn-success btn-lg">
+                        <i class="fas fa-user-plus me-2"></i>Get Started
+                    </a>
+                    <a href="{{ url_for('login') }}" class="btn btn-outline-light btn-lg">
+                        <i class="fas fa-sign-in-alt me-2"></i>Log In
+                    </a>
+                    {% endif %}
+                </div>
             </div>
-            {% else %}
-            <div class="mt-4">
-                <a href="{{ url_for('waste_classification') }}" class="btn btn-success btn-lg me-2">
-                    <i class="fas fa-camera me-2"></i>Classify Waste
-                </a>
-                <a href="{{ url_for('waste_map') }}" class="btn btn-info btn-lg">
-                    <i class="fas fa-map-marked-alt me-2"></i>Find Recycling Centers
-                </a>
-            </div>
-            {% endif %}
-        </div>
-        <div class="col-md-4 d-none d-md-block">
-            <div class="text-center">
-                <i class="fas fa-recycle fa-9x eco-icon" style="opacity: 0.8;"></i>
+            <div class="col-lg-6">
+                <div class="text-center fade-in-up">
+                    <img src="https://i.imgur.com/HQFQKjW.png" alt="Waste Management Illustration" class="img-fluid rounded-3 shadow-lg" style="max-width: 90%;">
+                </div>
             </div>
         </div>
     </div>
-</div>
+</section>
 
-<!-- UN SDG Goals Section -->
-<section class="mt-5">
-    <h2 class="mb-4"><i class="fas fa-globe me-2"></i>UN Sustainable Development Goals</h2>
-    <div class="row">
-        <div class="col-md-4 mb-4">
-            <div class="card h-100 sdg-11 sdg-card">
-                <div class="card-body text-center">
-                    <div class="sdg-icon">
-                        <i class="fas fa-city"></i>
+<!-- SDG Goals Section -->
+<section class="py-5 bg-dark">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold">Supporting UN Sustainable Development Goals</h2>
+            <p class="text-muted">EcoSort is aligned with multiple UN SDGs to create global impact</p>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow">
+                    <div class="card-body text-center p-4">
+                        <div class="feature-icon bg-primary bg-opacity-10 text-primary mx-auto">
+                            <i class="fas fa-city"></i>
+                        </div>
+                        <h3 class="h4 mb-3 sdg-11">SDG 11</h3>
+                        <h4 class="h5 mb-3">{{ sdg_info.sdg11 }}</h4>
+                        <p class="text-muted">By providing a map of recycling centers and waste disposal facilities, we're creating more sustainable cities and communities.</p>
                     </div>
-                    <h3 class="card-title">SDG 11</h3>
-                    <h5>Sustainable Cities and Communities</h5>
-                    <p class="card-text">Make cities inclusive, safe, resilient and sustainable by improving waste management systems.</p>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow">
+                    <div class="card-body text-center p-4">
+                        <div class="feature-icon bg-success bg-opacity-10 text-success mx-auto">
+                            <i class="fas fa-recycle"></i>
+                        </div>
+                        <h3 class="h4 mb-3 sdg-12">SDG 12</h3>
+                        <h4 class="h5 mb-3">{{ sdg_info.sdg12 }}</h4>
+                        <p class="text-muted">Through waste classification and tracking, we promote responsible consumption and production patterns.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow">
+                    <div class="card-body text-center p-4">
+                        <div class="feature-icon bg-info bg-opacity-10 text-info mx-auto">
+                            <i class="fas fa-leaf"></i>
+                        </div>
+                        <h3 class="h4 mb-3 sdg-13">SDG 13</h3>
+                        <h4 class="h5 mb-3">{{ sdg_info.sdg13 }}</h4>
+                        <p class="text-muted">By tracking carbon savings from proper waste disposal, we contribute to combating climate change and its impacts.</p>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-4 mb-4">
-            <div class="card h-100 sdg-12 sdg-card">
-                <div class="card-body text-center">
-                    <div class="sdg-icon">
-                        <i class="fas fa-shopping-cart"></i>
-                    </div>
-                    <h3 class="card-title">SDG 12</h3>
-                    <h5>Responsible Consumption and Production</h5>
-                    <p class="card-text">Ensure sustainable consumption and production patterns by promoting recycling and reuse.</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4 mb-4">
-            <div class="card h-100 sdg-13 sdg-card">
-                <div class="card-body text-center">
-                    <div class="sdg-icon">
-                        <i class="fas fa-temperature-high"></i>
-                    </div>
-                    <h3 class="card-title">SDG 13</h3>
-                    <h5>Climate Action</h5>
-                    <p class="card-text">Combat climate change and its impacts by reducing waste-related greenhouse gas emissions.</p>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="text-center mt-3">
-        <a href="{{ url_for('sustainable_goals') }}" class="btn btn-outline-info">
-            <i class="fas fa-info-circle me-2"></i>Learn More About SDGs
-        </a>
     </div>
 </section>
 
 <!-- Features Section -->
-<section class="mt-5">
-    <h2 class="mb-4"><i class="fas fa-star me-2"></i>Key Features</h2>
-    <div class="row">
-        <div class="col-md-6 mb-4">
-            <div class="card feature-card h-100">
-                <div class="card-body">
-                    <h3><i class="fas fa-camera text-success me-2"></i>Waste Classification</h3>
-                    <p>Upload images of waste items to instantly classify them using AI. Learn how to properly dispose of different types of waste.</p>
-                    <a href="{{ url_for('waste_classification') }}" class="btn btn-sm btn-success">Try It Now</a>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6 mb-4">
-            <div class="card feature-card h-100">
-                <div class="card-body">
-                    <h3><i class="fas fa-map-marked-alt text-info me-2"></i>Recycling Map</h3>
-                    <p>Find nearby recycling centers and disposal facilities. Get directions and information about accepted waste types.</p>
-                    <a href="{{ url_for('waste_map') }}" class="btn btn-sm btn-info">View Map</a>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6 mb-4">
-            <div class="card feature-card h-100">
-                <div class="card-body">
-                    <h3><i class="fas fa-chart-bar text-primary me-2"></i>Analytics Dashboard</h3>
-                    <p>Track your recycling habits, waste disposal trends, and environmental impact over time with visual data representation.</p>
-                    <a href="{{ url_for('analytics') }}" class="btn btn-sm btn-primary">View Analytics</a>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6 mb-4">
-            <div class="card feature-card h-100">
-                <div class="card-body">
-                    <h3><i class="fas fa-leaf text-success me-2"></i>Carbon Footprint Tracker</h3>
-                    <p>Calculate and monitor the carbon footprint reduction from your sustainable waste management activities.</p>
-                    <a href="{{ url_for('carbon_tracker') }}" class="btn btn-sm btn-success">Track Impact</a>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-{% if current_user.is_authenticated %}
-<!-- Dashboard Section -->
-<section class="mt-5">
-    <h2 class="mb-4"><i class="fas fa-tachometer-alt me-2"></i>Your Dashboard</h2>
-    <div class="row">
-        <div class="col-md-8">
-            <div class="card mb-4">
-                <div class="card-header bg-dark">
-                    <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Your Impact Summary</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row text-center">
-                        <div class="col-md-4 mb-3">
-                            <div class="d-flex flex-column align-items-center">
-                                <div class="h1 mb-0 text-success">{{ user_waste_logs }}</div>
-                                <div class="text-muted">Waste Items Classified</div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <div class="d-flex flex-column align-items-center">
-                                <div class="h1 mb-0 text-warning">{{ user_points }}</div>
-                                <div class="text-muted">Points Earned</div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <div class="d-flex flex-column align-items-center">
-                                <div class="h1 mb-0 text-info">{{ total_carbon_saved|round(2) }}</div>
-                                <div class="text-muted">kg CO2 Saved</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="text-center mt-3">
-                        <a href="{{ url_for('analytics') }}" class="btn btn-primary">View Detailed Analytics</a>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Recent Activities -->
-            <div class="card">
-                <div class="card-header bg-dark">
-                    <h5 class="mb-0"><i class="fas fa-history me-2"></i>Recent Activities</h5>
-                </div>
-                <div class="card-body">
-                    {% if recent_activities %}
-                    <div class="list-group">
-                        {% for activity in recent_activities %}
-                        <div class="list-group-item bg-dark">
-                            <div class="d-flex w-100 justify-content-between">
-                                <h6 class="mb-1">
-                                    <i class="fas fa-recycle text-success me-2"></i>
-                                    Recycled {{ activity.weight }}kg of {{ activity.waste_type }}
-                                </h6>
-                                <small>{{ activity.timestamp.strftime('%d %b %Y') }}</small>
-                            </div>
-                            <p class="mb-1">
-                                <span class="badge bg-success me-2">+{{ activity.points_earned }} points</span>
-                                <span class="badge bg-info">-{{ activity.carbon_saved|round(2) }} kg CO2</span>
-                            </p>
-                            <small>At {{ activity.center.name }}</small>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    {% else %}
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle me-2"></i>No recent activities yet. Start recycling to see your impact!
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
+<section class="py-5">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold">Key Features</h2>
+            <p class="text-muted">Discover how EcoSort helps you manage waste sustainably</p>
         </div>
         
-        <div class="col-md-4">
-            <!-- Achievements Section -->
-            <div class="card mb-4">
-                <div class="card-header bg-dark">
-                    <h5 class="mb-0"><i class="fas fa-award me-2"></i>Your Achievements</h5>
-                </div>
-                <div class="card-body">
-                    {% if achievements %}
-                    <div class="row text-center">
-                        {% for achievement in achievements %}
-                        <div class="col-6 mb-3">
-                            <div class="achievement-badge">
-                                <i class="fas {{ achievement.icon or 'fa-medal' }}"></i>
-                            </div>
-                            <div class="small">{{ achievement.name }}</div>
-                        </div>
-                        {% endfor %}
+        <div class="row g-4">
+            <div class="col-md-6 col-lg-3">
+                <div class="card h-100 dashboard-card">
+                    <div class="card-body text-center p-4">
+                        <i class="fas fa-camera-retro text-primary mb-3" style="font-size: 2.5rem;"></i>
+                        <h3 class="h5 mb-3">Waste Classification</h3>
+                        <p class="text-muted">Upload photos of waste items to identify their type and get disposal recommendations.</p>
                     </div>
-                    <div class="text-center mt-2">
-                        <a href="{{ url_for('profile') }}" class="btn btn-sm btn-outline-warning">View All Achievements</a>
-                    </div>
-                    {% else %}
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle me-2"></i>No achievements yet. Start recycling to earn badges!
-                    </div>
-                    {% endif %}
                 </div>
             </div>
             
-            <!-- Global Stats Section -->
-            <div class="card">
-                <div class="card-header bg-dark">
-                    <h5 class="mb-0"><i class="fas fa-globe me-2"></i>Global Impact</h5>
+            <div class="col-md-6 col-lg-3">
+                <div class="card h-100 dashboard-card">
+                    <div class="card-body text-center p-4">
+                        <i class="fas fa-map-marked-alt text-success mb-3" style="font-size: 2.5rem;"></i>
+                        <h3 class="h5 mb-3">Recycling Map</h3>
+                        <p class="text-muted">Find nearby recycling centers and waste disposal facilities with directions.</p>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between">
-                            <span><i class="fas fa-users me-2"></i>Total Users</span>
-                            <span class="badge bg-secondary">{{ total_users }}</span>
-                        </div>
+            </div>
+            
+            <div class="col-md-6 col-lg-3">
+                <div class="card h-100 dashboard-card">
+                    <div class="card-body text-center p-4">
+                        <i class="fas fa-chart-line text-info mb-3" style="font-size: 2.5rem;"></i>
+                        <h3 class="h5 mb-3">Impact Tracking</h3>
+                        <p class="text-muted">Monitor your carbon footprint reduction and environmental impact over time.</p>
                     </div>
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between">
-                            <span><i class="fas fa-trash-alt me-2"></i>Waste Items Logged</span>
-                            <span class="badge bg-secondary">{{ total_waste_logs }}</span>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between">
-                            <span><i class="fas fa-leaf me-2"></i>Total CO2 Saved</span>
-                            <span class="badge bg-success">{{ total_carbon_saved_global|round(2) }} kg</span>
-                        </div>
-                    </div>
-                    <div class="progress" style="height: 5px;">
-                        <div class="progress-bar bg-success" role="progressbar" style="width: 100%;" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-lg-3">
+                <div class="card h-100 dashboard-card">
+                    <div class="card-body text-center p-4">
+                        <i class="fas fa-trophy text-warning mb-3" style="font-size: 2.5rem;"></i>
+                        <h3 class="h5 mb-3">Gamification</h3>
+                        <p class="text-muted">Earn points, level up, and unlock badges for sustainable waste management.</p>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </section>
-{% else %}
-<!-- Call to Action Section for visitors -->
-<section class="mt-5">
-    <div class="card bg-dark">
-        <div class="card-body text-center py-5">
-            <h2><i class="fas fa-hand-point-right me-2"></i>Join the sustainable movement today!</h2>
-            <p class="lead">Create an account to start tracking your recycling impact and contribute to a greener planet.</p>
-            <div class="mt-4">
-                <a href="{{ url_for('register') }}" class="btn btn-success btn-lg me-3">
-                    <i class="fas fa-user-plus me-2"></i>Register Now
-                </a>
-                <a href="{{ url_for('sustainable_goals') }}" class="btn btn-outline-info btn-lg">
-                    <i class="fas fa-info-circle me-2"></i>Learn More
-                </a>
-            </div>
-        </div>
-    </div>
-</section>
-{% endif %}
 
-<!-- Community Impact Section -->
-<section class="mt-5">
-    <h2 class="mb-4"><i class="fas fa-users me-2"></i>Community Impact</h2>
-    <div class="row">
-        <div class="col-md-4 mb-4">
-            <div class="card text-center h-100">
-                <div class="card-body">
-                    <i class="fas fa-tree fa-4x text-success mb-3"></i>
-                    <h3>Environmental Benefits</h3>
-                    <p>Proper waste management reduces landfill waste, conserves natural resources, and decreases greenhouse gas emissions.</p>
+<!-- Stats Section -->
+<section class="py-5 bg-dark">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold">Community Impact</h2>
+            <p class="text-muted">Together, we're making a difference</p>
+        </div>
+        
+        <div class="row g-4 text-center">
+            <div class="col-md-4">
+                <div class="card h-100 bg-transparent border-0">
+                    <div class="card-body">
+                        <i class="fas fa-users text-primary mb-3" style="font-size: 3rem;"></i>
+                        <h3 class="display-4 fw-bold">{{ stats.users }}</h3>
+                        <p class="text-muted">Active Users</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card h-100 bg-transparent border-0">
+                    <div class="card-body">
+                        <i class="fas fa-trash-alt text-success mb-3" style="font-size: 3rem;"></i>
+                        <h3 class="display-4 fw-bold">{{ stats.waste_entries }}</h3>
+                        <p class="text-muted">Waste Items Tracked</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card h-100 bg-transparent border-0">
+                    <div class="card-body">
+                        <i class="fas fa-leaf text-info mb-3" style="font-size: 3rem;"></i>
+                        <h3 class="display-4 fw-bold">{{ "%.1f"|format(stats.total_carbon_saved) }}</h3>
+                        <p class="text-muted">kg CO₂ Saved</p>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-4 mb-4">
-            <div class="card text-center h-100">
-                <div class="card-body">
-                    <i class="fas fa-hands-helping fa-4x text-info mb-3"></i>
-                    <h3>Social Impact</h3>
-                    <p>Creating cleaner communities, safer environments, and better health outcomes for present and future generations.</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4 mb-4">
-            <div class="card text-center h-100">
-                <div class="card-body">
-                    <i class="fas fa-coins fa-4x text-warning mb-3"></i>
-                    <h3>Economic Value</h3>
-                    <p>Recycling creates jobs, reduces waste management costs, and generates valuable reusable materials.</p>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="card border-0 shadow-lg">
+                    <div class="card-body p-5 text-center">
+                        <h2 class="fw-bold mb-4">Ready to make a difference?</h2>
+                        <p class="lead mb-4">Join our community of eco-conscious individuals and start your sustainable waste management journey today.</p>
+                        <div class="d-flex flex-wrap justify-content-center gap-3">
+                            {% if current_user.is_authenticated %}
+                            <a href="{{ url_for('classify_page') }}" class="btn btn-success btn-lg">
+                                <i class="fas fa-camera me-2"></i>Classify Waste
+                            </a>
+                            <a href="{{ url_for('waste_map') }}" class="btn btn-primary btn-lg">
+                                <i class="fas fa-map-marker-alt me-2"></i>Find Recycling Centers
+                            </a>
+                            {% else %}
+                            <a href="{{ url_for('register') }}" class="btn btn-success btn-lg">
+                                <i class="fas fa-user-plus me-2"></i>Create Account
+                            </a>
+                            <a href="{{ url_for('login') }}" class="btn btn-outline-primary btn-lg">
+                                <i class="fas fa-sign-in-alt me-2"></i>Log In
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

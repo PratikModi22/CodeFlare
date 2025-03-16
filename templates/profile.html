@@ -1,249 +1,220 @@
-{% extends 'layout.html' %}
-
-{% block title %}Your Profile - EcoTrack{% endblock %}
+{% extends "layout.html" %}
 
 {% block content %}
-<div class="page-header">
-    <h1><i class="fas fa-user-circle me-2 text-info"></i>Your Profile</h1>
-    <p class="lead">View your achievements, stats, and recent activities.</p>
-</div>
-
-<div class="row">
-    <div class="col-md-4 mb-4">
-        <div class="card">
-            <div class="card-header bg-dark">
-                <h5 class="mb-0"><i class="fas fa-id-card me-2"></i>Profile Information</h5>
+<div class="container py-4">
+    <div class="profile-header">
+        <div class="row align-items-center">
+            <div class="col-md-4 text-center">
+                <div class="profile-avatar">
+                    {{ current_user.username[0].upper() }}
+                </div>
+                <h2 class="mt-3">{{ current_user.username }}</h2>
+                <p class="text-muted">Member since {{ current_user.created_at.strftime('%b %d, %Y') }}</p>
             </div>
-            <div class="card-body text-center">
-                <div class="mb-3">
-                    <div class="d-inline-flex justify-content-center align-items-center rounded-circle bg-info text-white" style="width: 100px; height: 100px;">
-                        <i class="fas fa-user fa-3x"></i>
+            <div class="col-md-8">
+                <div class="row">
+                    <div class="col-4 text-center">
+                        <h3>{{ current_user.points }}</h3>
+                        <p class="text-muted">Points</p>
                     </div>
-                </div>
-                <h4>{{ user.username }}</h4>
-                <p class="text-muted">{{ user.email }}</p>
-                <p><small>Member since: {{ user.date_joined.strftime('%B %d, %Y') }}</small></p>
-                
-                <div class="d-flex justify-content-around text-center mt-4">
-                    <div>
-                        <h4 class="mb-0">{{ user.points }}</h4>
-                        <small class="text-muted">Points</small>
+                    <div class="col-4 text-center">
+                        <h3>{{ current_user.level }}</h3>
+                        <p class="text-muted">Level</p>
                     </div>
-                    <div>
-                        <h4 class="mb-0">{{ user.carbon_saved|round(2) }}</h4>
-                        <small class="text-muted">kg CO2 Saved</small>
-                    </div>
-                    <div>
-                        <h4 class="mb-0">{{ user_achievements|length }}</h4>
-                        <small class="text-muted">Achievements</small>
+                    <div class="col-4 text-center">
+                        <h3>{{ current_user.waste_entries.count() }}</h3>
+                        <p class="text-muted">Entries</p>
                     </div>
                 </div>
                 
+                <!-- Level Progress -->
                 <div class="mt-4">
-                    <button class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#editProfileModal">
-                        <i class="fas fa-pencil-alt me-2"></i>Edit Profile
-                    </button>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span>Progress to Level {{ current_user.level + 1 }}</span>
+                        <span>{{ current_user.points }} / {{ next_level_points }} points</span>
+                    </div>
+                    <div class="progress">
+                        <div id="level-progress" class="progress-bar bg-success" role="progressbar" 
+                             style="width: 0%;" 
+                             aria-valuenow="{{ progress_percentage }}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100"
+                             data-progress="{{ progress_percentage }}">
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
-        
-        <div class="card mt-4">
-            <div class="card-header bg-dark">
-                <h5 class="mb-0"><i class="fas fa-clipboard-list me-2"></i>Your Stats</h5>
-            </div>
-            <div class="card-body">
-                <ul class="list-group list-group-flush">
-                    <li class="list-group-item d-flex justify-content-between align-items-center bg-dark">
-                        <span><i class="fas fa-camera me-2 text-info"></i>Waste Items Classified</span>
-                        <span class="badge bg-info rounded-pill">{{ recent_logs|length }}</span>
-                    </li>
-                    <li class="list-group-item d-flex justify-content-between align-items-center bg-dark">
-                        <span><i class="fas fa-recycle me-2 text-success"></i>Recycling Activities</span>
-                        <span class="badge bg-success rounded-pill">{{ recent_recycling|length }}</span>
-                    </li>
-                    <li class="list-group-item d-flex justify-content-between align-items-center bg-dark">
-                        <span><i class="fas fa-tree me-2 text-success"></i>Trees Saved</span>
-                        <span class="badge bg-success rounded-pill">{{ (user.carbon_saved / 21)|round(2) }}</span>
-                    </li>
-                    <li class="list-group-item d-flex justify-content-between align-items-center bg-dark">
-                        <span><i class="fas fa-car me-2 text-warning"></i>Car KM Equivalent</span>
-                        <span class="badge bg-warning rounded-pill">{{ (user.carbon_saved / 0.12)|round(2) }}</span>
-                    </li>
-                </ul>
+                
+                <!-- Hidden level up notification trigger -->
+                <div id="level-up-notification" class="d-none" data-level-up="{{ 'true' if request.args.get('level_up') else 'false' }}"></div>
             </div>
         </div>
     </div>
     
-    <div class="col-md-8">
-        <div class="card mb-4">
-            <div class="card-header bg-dark">
-                <h5 class="mb-0"><i class="fas fa-award me-2"></i>Your Achievements</h5>
-            </div>
-            <div class="card-body">
-                {% if user_achievements %}
-                <div class="row">
-                    {% for achievement in user_achievements %}
-                    <div class="col-md-4 col-6 mb-4 text-center">
-                        <div class="achievement-badge" data-tippy-content="{{ achievement.description }}">
-                            <i class="fas {{ achievement.icon or 'fa-medal' }} fa-2x"></i>
+    <div class="row g-4 mt-4">
+        <!-- Badges Section -->
+        <div class="col-md-6">
+            <div class="card bg-dark">
+                <div class="card-header">
+                    <h5 class="mb-0">Badges & Achievements</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        {% for badge in badges %}
+                        <div class="col-6 col-lg-4">
+                            <div class="badge-item text-center p-3" 
+                                 data-earned="{{ 'true' if badge.earned else 'false' }}"
+                                 data-badge-id="{{ loop.index }}"
+                                 data-badge-name="{{ badge.name }}">
+                                <div class="badge-icon">
+                                    <i class="fas fa-{{ badge.icon }} fa-2x"></i>
+                                </div>
+                                <p class="mt-2 mb-0">{{ badge.name }}</p>
+                            </div>
                         </div>
-                        <h6>{{ achievement.name }}</h6>
-                        <p class="small text-muted">{{ achievement.description }}</p>
+                        {% endfor %}
                     </div>
-                    {% endfor %}
-                </div>
-                {% else %}
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle me-2"></i>You haven't earned any achievements yet. Start recycling to unlock them!
-                </div>
-                {% endif %}
-                
-                <hr>
-                
-                <h5 class="mt-4 mb-3">Achievements to Unlock</h5>
-                
-                <div class="row">
-                    {% for achievement in all_achievements %}
-                        {% if achievement not in user_achievements %}
-                        <div class="col-md-4 col-6 mb-4 text-center">
-                            <div class="achievement-badge locked" data-tippy-content="{{ achievement.description }}">
-                                <i class="fas {{ achievement.icon or 'fa-medal' }} fa-2x"></i>
-                            </div>
-                            <h6>{{ achievement.name }}</h6>
-                            <p class="small text-muted">{{ achievement.description }}</p>
-                            {% if achievement.points_required > 0 %}
-                            <div class="progress" style="height: 5px;">
-                                <div class="progress-bar bg-success" role="progressbar" 
-                                     style="width: {{ min(100, (user.points / achievement.points_required * 100))|round|int }}%;" 
-                                     aria-valuenow="{{ min(100, (user.points / achievement.points_required * 100))|round|int }}" 
-                                     aria-valuemin="0" 
-                                     aria-valuemax="100"></div>
-                            </div>
-                            <small>{{ user.points }} / {{ achievement.points_required }} points</small>
-                            {% endif %}
-                        </div>
-                        {% endif %}
-                    {% endfor %}
                 </div>
             </div>
         </div>
         
-        <div class="card mb-4">
-            <div class="card-header bg-dark">
-                <h5 class="mb-0"><i class="fas fa-history me-2"></i>Recent Activities</h5>
-            </div>
-            <div class="card-body">
-                <ul class="nav nav-tabs" id="myTab" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="waste-tab" data-bs-toggle="tab" data-bs-target="#waste-logs" type="button" role="tab" aria-controls="waste-logs" aria-selected="true">
-                            <i class="fas fa-camera me-1"></i> Waste Logs
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="recycling-tab" data-bs-toggle="tab" data-bs-target="#recycling-logs" type="button" role="tab" aria-controls="recycling-logs" aria-selected="false">
-                            <i class="fas fa-recycle me-1"></i> Recycling Logs
-                        </button>
-                    </li>
-                </ul>
-                <div class="tab-content mt-3" id="myTabContent">
-                    <div class="tab-pane fade show active" id="waste-logs" role="tabpanel" aria-labelledby="waste-tab">
-                        {% if recent_logs %}
-                        <div class="list-group">
-                            {% for log in recent_logs %}
-                            <div class="list-group-item bg-dark">
-                                <div class="d-flex w-100 justify-content-between">
-                                    <h6 class="mb-1">
-                                        <i class="fas fa-trash-alt text-info me-2"></i>
-                                        Classified {{ log.waste_type.name }} waste
-                                    </h6>
-                                    <small>{{ log.timestamp.strftime('%d %b %Y, %H:%M') }}</small>
-                                </div>
-                                <p class="mb-1">
-                                    Weight: {{ log.weight }} kg
-                                    <span class="badge {% if log.waste_type.recyclable %}bg-success{% else %}bg-danger{% endif %} ms-2">
-                                        {% if log.waste_type.recyclable %}Recyclable{% else %}Non-Recyclable{% endif %}
-                                    </span>
-                                </p>
-                                <small>Carbon Impact: {{ log.carbon_impact()|round(2) }} kg CO2</small>
-                            </div>
-                            {% endfor %}
-                        </div>
-                        {% else %}
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle me-2"></i>No waste logs yet. Start classifying waste items to see them here.
-                        </div>
-                        {% endif %}
+        <!-- Carbon Impact Section -->
+        <div class="col-md-6">
+            <div class="card bg-dark">
+                <div class="card-header">
+                    <h5 class="mb-0">Environmental Impact</h5>
+                </div>
+                <div class="card-body">
+                    {% set total_carbon = current_user.waste_entries.with_entities(db.func.sum(WasteEntry.carbon_saved)).scalar() or 0 %}
+                    
+                    <div class="text-center mb-4">
+                        <h2 class="mb-0">{{ "%.2f"|format(total_carbon) }} kg CO₂e</h2>
+                        <p class="text-muted">Carbon Emissions Saved</p>
                     </div>
-                    <div class="tab-pane fade" id="recycling-logs" role="tabpanel" aria-labelledby="recycling-tab">
-                        {% if recent_recycling %}
-                        <div class="list-group">
-                            {% for activity in recent_recycling %}
-                            <div class="list-group-item bg-dark">
-                                <div class="d-flex w-100 justify-content-between">
-                                    <h6 class="mb-1">
-                                        <i class="fas fa-recycle text-success me-2"></i>
-                                        Recycled {{ activity.weight }}kg of {{ activity.waste_type }}
-                                    </h6>
-                                    <small>{{ activity.timestamp.strftime('%d %b %Y, %H:%M') }}</small>
-                                </div>
-                                <p class="mb-1">
-                                    <span class="badge bg-success me-2">+{{ activity.points_earned }} points</span>
-                                    <span class="badge bg-info">-{{ activity.carbon_saved|round(2) }} kg CO2</span>
-                                </p>
-                                <small>At {{ activity.center.name }}</small>
+                    
+                    <div class="impact-equivalents">
+                        <h6>This is equivalent to:</h6>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item bg-transparent d-flex justify-content-between align-items-center">
+                                <span><i class="fas fa-car me-2"></i> Car travel avoided</span>
+                                <span>{{ "%.1f"|format(total_carbon / 0.2) }} km</span>
+                            </li>
+                            <li class="list-group-item bg-transparent d-flex justify-content-between align-items-center">
+                                <span><i class="fas fa-tree me-2"></i> Tree-days of CO₂ absorption</span>
+                                <span>{{ "%.0f"|format(total_carbon / 0.022) }} days</span>
+                            </li>
+                            <li class="list-group-item bg-transparent d-flex justify-content-between align-items-center">
+                                <span><i class="fas fa-mobile-alt me-2"></i> Smartphone charges</span>
+                                <span>{{ "%.0f"|format(total_carbon / 0.005) }}</span>
+                            </li>
+                            <li class="list-group-item bg-transparent d-flex justify-content-between align-items-center">
+                                <span><i class="fas fa-lightbulb me-2"></i> LED bulb hours</span>
+                                <span>{{ "%.0f"|format(total_carbon / 0.01) }} hours</span>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <!-- SDG Alignment -->
+                    <div class="mt-4">
+                        <div class="alert alert-dark">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-temperature-high sdg13-color me-2 fa-lg"></i>
+                                <span>Your actions contribute to <strong>SDG 13: Climate Action</strong> by reducing greenhouse gas emissions.</span>
                             </div>
-                            {% endfor %}
                         </div>
-                        {% else %}
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle me-2"></i>No recycling logs yet. Visit recycling centers to log your activities.
-                        </div>
-                        {% endif %}
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
-
-<!-- Edit Profile Modal -->
-<div class="modal fade" id="editProfileModal" tabindex="-1" aria-labelledby="editProfileModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-info text-white">
-                <h5 class="modal-title" id="editProfileModalLabel">
-                    <i class="fas fa-pencil-alt me-2"></i>Edit Profile
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+    
+    <!-- Activity History -->
+    <div class="card bg-dark mt-4">
+        <div class="card-header">
+            <h5 class="mb-0">Recent Activity</h5>
+        </div>
+        <div class="card-body">
+            {% if activities %}
+            <div class="table-responsive">
+                <table class="table table-dark table-hover">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Activity</th>
+                            <th>Points</th>
+                            <th>Environmental Impact</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for activity in activities %}
+                        <tr>
+                            <td>{{ activity.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>
+                                {% if activity.activity_type == 'waste_classification' %}
+                                <i class="fas fa-recycle me-2"></i> Waste Classification
+                                {% elif activity.activity_type == 'recycling_center_visit' %}
+                                <i class="fas fa-map-marker-alt me-2"></i> Recycling Center Visit
+                                {% else %}
+                                <i class="fas fa-leaf me-2"></i> {{ activity.activity_type|capitalize }}
+                                {% endif %}
+                            </td>
+                            <td>+{{ activity.points_earned }}</td>
+                            <td>
+                                {% if activity.carbon_saved %}
+                                {{ "%.2f"|format(activity.carbon_saved) }} kg CO₂e saved
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
-            <div class="modal-body">
-                <form id="editProfileForm" action="#" method="post">
+            {% else %}
+            <div class="alert alert-info">
+                No activity recorded yet. Start by <a href="{{ url_for('classify_page') }}">classifying waste</a>.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Account Settings -->
+    <div class="card bg-dark mt-4">
+        <div class="card-header">
+            <h5 class="mb-0">Account Settings</h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-6">
                     <div class="mb-3">
                         <label for="username" class="form-label">Username</label>
-                        <input type="text" class="form-control" id="username" value="{{ user.username }}" disabled>
-                        <div class="form-text">Username cannot be changed.</div>
+                        <input type="text" class="form-control" id="username" value="{{ current_user.username }}" disabled>
                     </div>
                     <div class="mb-3">
                         <label for="email" class="form-label">Email</label>
-                        <input type="email" class="form-control" id="email" value="{{ user.email }}">
+                        <input type="email" class="form-control" id="email" value="{{ current_user.email }}" disabled>
                     </div>
-                    <div class="mb-3">
-                        <label for="current-password" class="form-label">Current Password</label>
-                        <input type="password" class="form-control" id="current-password">
+                </div>
+                <div class="col-md-6">
+                    <div class="card bg-dark h-100">
+                        <div class="card-body">
+                            <h6>Preferences</h6>
+                            <div class="form-check form-switch mt-3">
+                                <input class="form-check-input" type="checkbox" id="notification-toggle" checked>
+                                <label class="form-check-label" for="notification-toggle">Email Notifications</label>
+                            </div>
+                            <div class="form-check form-switch mt-2">
+                                <input class="form-check-input" type="checkbox" id="sound-toggle" onclick="toggleSoundEffects()" checked>
+                                <label class="form-check-label" for="sound-toggle">Sound Effects</label>
+                            </div>
+                            <div class="mt-4">
+                                <button class="btn btn-outline-danger" disabled>
+                                    <i class="fas fa-trash-alt"></i> Delete Account
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label for="new-password" class="form-label">New Password (leave blank to keep current)</label>
-                        <input type="password" class="form-control" id="new-password">
-                    </div>
-                    <div class="mb-3">
-                        <label for="confirm-password" class="form-label">Confirm New Password</label>
-                        <input type="password" class="form-control" id="confirm-password">
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" id="saveProfileBtn">Save Changes</button>
+                </div>
             </div>
         </div>
     </div>
@@ -251,18 +222,15 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="https://unpkg.com/@popperjs/core@2"></script>
-<script src="https://unpkg.com/tippy.js@6"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Initialize tooltips
-        tippy('[data-tippy-content]');
+        // If there's a query parameter indicating points earned, show animation
+        const urlParams = new URLSearchParams(window.location.search);
+        const pointsEarned = urlParams.get('points_earned');
         
-        // Handle profile edit form submission
-        document.getElementById('saveProfileBtn').addEventListener('click', function() {
-            alert('Profile update functionality would be implemented here');
-            bootstrap.Modal.getInstance(document.getElementById('editProfileModal')).hide();
-        });
+        if (pointsEarned && !isNaN(pointsEarned)) {
+            animatePointsEarned(parseInt(pointsEarned));
+        }
     });
 </script>
 {% endblock %}

@@ -1,224 +1,185 @@
+import os
 import requests
-import json
 import logging
-from models import WasteCategory
+from app import app
 
-def find_nearby_centers(latitude, longitude, api_key, radius=5000):
+# Setup logging
+logger = logging.getLogger(__name__)
+
+def get_nearby_recycling_centers(latitude, longitude, radius=5000, waste_type=None):
     """
-    Find nearby recycling centers using Google Maps Places API
+    Gets nearby recycling centers using Google Maps API.
     
     Args:
-        latitude: User's latitude
-        longitude: User's longitude
-        api_key: Google Maps API key
+        latitude: The latitude of the user's location
+        longitude: The longitude of the user's location
         radius: Search radius in meters (default: 5000)
+        waste_type: Optional filter for specific waste types
         
     Returns:
-        list: List of recycling centers with details
+        List of dictionaries containing recycling center information
     """
     try:
-        # Prepare request to Places API
-        base_url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
+        api_key = app.config['GOOGLE_MAPS_API_KEY']
+        if not api_key:
+            logger.error("Google Maps API key not found")
+            return []
         
-        # Keywords for recycling centers
-        keywords = ["recycling center", "waste management", "recycling facility", "waste disposal"]
+        # Define search keywords based on waste type
+        keywords = "recycling center"
+        if waste_type:
+            if waste_type == "electronic":
+                keywords = "electronic waste recycling"
+            elif waste_type == "hazardous":
+                keywords = "hazardous waste disposal"
         
-        all_results = []
+        # Prepare the Places API request
+        url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
+        params = {
+            "location": f"{latitude},{longitude}",
+            "radius": radius,
+            "keyword": keywords,
+            "key": api_key
+        }
         
-        for keyword in keywords:
-            params = {
-                "location": f"{latitude},{longitude}",
-                "radius": radius,
-                "keyword": keyword,
-                "key": api_key
-            }
-            
-            # Send request to Places API
-            response = requests.get(base_url, params=params)
-            
-            if response.status_code != 200:
-                logging.error(f"Places API error: {response.text}")
-                continue
-            
-            results = response.json().get('results', [])
-            all_results.extend(results)
+        response = requests.get(url, params=params)
+        data = response.json()
         
-        # Process results to our format
+        if response.status_code != 200 or data.get("status") != "OK":
+            logger.error(f"Maps API error: {data.get('status')} - {data.get('error_message', 'Unknown error')}")
+            return []
+        
+        # Process the results
         centers = []
-        seen_place_ids = set()
-        
-        for place in all_results:
-            place_id = place.get('place_id')
-            
-            # Skip duplicates
-            if place_id in seen_place_ids:
-                continue
-            
-            seen_place_ids.add(place_id)
-            
-            # Get detailed place information
+        for place in data.get("results", []):
             center = {
-                'id': place_id,
-                'name': place.get('name', 'Unknown'),
-                'address': place.get('vicinity', 'Unknown address'),
-                'lat': place['geometry']['location']['lat'],
-                'lng': place['geometry']['location']['lng'],
-                'rating': place.get('rating', 0),
-                'user_ratings_total': place.get('user_ratings_total', 0)
+                "id": place.get("place_id"),
+                "name": place.get("name"),
+                "address": place.get("vicinity"),
+                "latitude": place.get("geometry", {}).get("location", {}).get("lat"),
+                "longitude": place.get("geometry", {}).get("location", {}).get("lng"),
+                "rating": place.get("rating"),
+                "types": place.get("types", []),
+                "open_now": place.get("opening_hours", {}).get("open_now")
             }
             
-            # Get more details from Place Details API
-            details = get_place_details(place_id, api_key)
-            if details:
-                center.update({
-                    'phone': details.get('phone', ''),
-                    'website': details.get('website', ''),
-                    'hours': details.get('hours', [])
-                })
-            
-            # Estimate accepted waste types based on name and types
-            accepted_waste = estimate_accepted_waste(place)
-            center['accepted_waste'] = accepted_waste
+            # Get additional details for each place
+            center_details = get_place_details(center["id"], api_key)
+            if center_details:
+                center.update(center_details)
             
             centers.append(center)
         
         return centers
     
     except Exception as e:
-        logging.error(f"Error finding nearby centers: {str(e)}")
+        logger.error(f"Error fetching recycling centers: {str(e)}")
         return []
 
 def get_place_details(place_id, api_key):
-    """Get detailed information about a place"""
+    """
+    Gets additional details for a specific place using the Places API Details endpoint.
+    
+    Args:
+        place_id: The place ID from the nearby search
+        api_key: Google Maps API key
+        
+    Returns:
+        Dictionary with additional place details
+    """
     try:
         url = "https://maps.googleapis.com/maps/api/place/details/json"
         params = {
             "place_id": place_id,
-            "fields": "formatted_phone_number,website,opening_hours",
+            "fields": "formatted_phone_number,website,opening_hours,formatted_address",
             "key": api_key
         }
         
         response = requests.get(url, params=params)
+        data = response.json()
         
-        if response.status_code != 200:
-            return None
+        if response.status_code != 200 or data.get("status") != "OK":
+            return {}
         
-        result = response.json().get('result', {})
-        
+        result = data.get("result", {})
         details = {
-            'phone': result.get('formatted_phone_number', ''),
-            'website': result.get('website', '')
+            "phone": result.get("formatted_phone_number", ""),
+            "website": result.get("website", ""),
+            "full_address": result.get("formatted_address", "")
         }
         
         # Process opening hours
-        if 'opening_hours' in result and 'weekday_text' in result['opening_hours']:
-            details['hours'] = result['opening_hours']['weekday_text']
+        if "opening_hours" in result and "weekday_text" in result["opening_hours"]:
+            details["hours"] = result["opening_hours"]["weekday_text"]
         
         return details
     
     except Exception as e:
-        logging.error(f"Error getting place details: {str(e)}")
-        return None
+        logger.error(f"Error fetching place details: {str(e)}")
+        return {}
 
-def estimate_accepted_waste(place):
-    """Estimate what types of waste a place accepts based on name and types"""
-    name = place.get('name', '').lower()
-    types = place.get('types', [])
+def get_directions(origin_lat, origin_lng, destination_lat, destination_lng, travel_mode="driving"):
+    """
+    Gets directions from origin to destination using Google Directions API.
     
-    accepted = []
-    
-    # Check for specific waste types in name
-    waste_keywords = {
-        'plastic': 1,
-        'paper': 2,
-        'glass': 3,
-        'metal': 4,
-        'organic': 5,
-        'compost': 5,
-        'electronic': 6,
-        'e-waste': 6,
-        'hazardous': 7
-    }
-    
-    for keyword, category_id in waste_keywords.items():
-        if keyword in name:
-            accepted.append(category_id)
-    
-    # General recycling centers typically accept common recyclables
-    if 'recycling' in name or 'recycling_center' in types:
-        # Common recyclables: plastic, paper, glass, metal
-        accepted.extend([1, 2, 3, 4])
-    
-    # If it's a general waste facility, it probably accepts most types
-    if 'waste' in name and 'management' in name:
-        accepted.extend([1, 2, 3, 4, 5, 7])
-    
-    # Deduplicate
-    accepted = list(set(accepted))
-    
-    return ','.join(map(str, accepted))
-
-# Fallback function for when API key is not available
-def find_nearby_centers_fallback(latitude, longitude):
-    """Fallback when Maps API is not available"""
-    # Return some sample centers at calculated distances from user location
-    from math import sin, cos, sqrt, atan2, radians
-    import random
-    
-    def calculate_distance(lat1, lon1, lat2, lon2):
-        # Calculate distance between two points using Haversine formula
-        R = 6371.0  # Radius of the Earth in km
+    Args:
+        origin_lat: Origin latitude
+        origin_lng: Origin longitude
+        destination_lat: Destination latitude
+        destination_lng: Destination longitude
+        travel_mode: Mode of transportation (driving, walking, bicycling, transit)
         
-        dlat = radians(lat2 - lat1)
-        dlon = radians(lon2 - lon1)
+    Returns:
+        Dictionary with directions information
+    """
+    try:
+        api_key = app.config['GOOGLE_MAPS_API_KEY']
+        if not api_key:
+            logger.error("Google Maps API key not found")
+            return {}
         
-        a = sin(dlat / 2)**2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon / 2)**2
-        c = 2 * atan2(sqrt(a), sqrt(1 - a))
-        
-        distance = R * c
-        return distance
-    
-    # Sample centers with calculated offsets
-    sample_centers = [
-        {
-            'id': 'sample-1',
-            'name': 'EcoRecycle Center',
-            'address': '123 Green St',
-            'lat': latitude + random.uniform(-0.02, 0.02),
-            'lng': longitude + random.uniform(-0.02, 0.02),
-            'accepted_waste': '1,2,3,4',
-            'phone': '555-123-4567',
-            'website': 'http://example.com/ecorecycle'
-        },
-        {
-            'id': 'sample-2',
-            'name': 'City Waste Management',
-            'address': '456 Sustainability Ave',
-            'lat': latitude + random.uniform(-0.03, 0.03),
-            'lng': longitude + random.uniform(-0.03, 0.03),
-            'accepted_waste': '1,2,3,4,5,7',
-            'phone': '555-765-4321',
-            'website': 'http://example.com/citywaste'
-        },
-        {
-            'id': 'sample-3',
-            'name': 'Electronic Recycling Hub',
-            'address': '789 Tech Blvd',
-            'lat': latitude + random.uniform(-0.01, 0.01),
-            'lng': longitude + random.uniform(-0.01, 0.01),
-            'accepted_waste': '6',
-            'phone': '555-987-6543',
-            'website': 'http://example.com/erecycle'
+        url = "https://maps.googleapis.com/maps/api/directions/json"
+        params = {
+            "origin": f"{origin_lat},{origin_lng}",
+            "destination": f"{destination_lat},{destination_lng}",
+            "mode": travel_mode,
+            "key": api_key
         }
-    ]
+        
+        response = requests.get(url, params=params)
+        data = response.json()
+        
+        if response.status_code != 200 or data.get("status") != "OK":
+            logger.error(f"Directions API error: {data.get('status')}")
+            return {}
+        
+        routes = data.get("routes", [])
+        if not routes:
+            return {}
+        
+        # Process the first route
+        route = routes[0]
+        legs = route.get("legs", [])
+        if not legs:
+            return {}
+        
+        leg = legs[0]
+        
+        return {
+            "distance": leg.get("distance", {}).get("text", ""),
+            "duration": leg.get("duration", {}).get("text", ""),
+            "start_address": leg.get("start_address", ""),
+            "end_address": leg.get("end_address", ""),
+            "steps": [
+                {
+                    "instruction": step.get("html_instructions", ""),
+                    "distance": step.get("distance", {}).get("text", ""),
+                    "duration": step.get("duration", {}).get("text", "")
+                }
+                for step in leg.get("steps", [])
+            ]
+        }
     
-    # Calculate distances
-    for center in sample_centers:
-        center['distance'] = calculate_distance(
-            latitude, longitude, center['lat'], center['lng']
-        )
-    
-    # Sort by distance
-    sample_centers.sort(key=lambda x: x['distance'])
-    
-    return sample_centers
+    except Exception as e:
+        logger.error(f"Error fetching directions: {str(e)}")
+        return {}

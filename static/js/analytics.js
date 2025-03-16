@@ -1,365 +1,219 @@
-// Wait for the DOM to be fully loaded
-document.addEventListener("DOMContentLoaded", function() {
-    // Initialize charts
-    initializeWasteDistributionChart();
-    initializeCarbonSavingsChart();
-    initializeLeaderboardChart();
-    
-    // Add event listeners for tabs
-    document.querySelectorAll('button[data-bs-toggle="tab"]').forEach(tab => {
-        tab.addEventListener('shown.bs.tab', function(event) {
-            // When switching tabs, resize charts to fit new container
-            window.dispatchEvent(new Event('resize'));
-        });
-    });
-});
+// Analytics Dashboard functionality
 
-// Initialize waste distribution chart
-function initializeWasteDistributionChart() {
-    // Get chart data from the data attribute
-    const chartContainer = document.getElementById('waste-distribution-chart');
-    
-    if (!chartContainer) return;
-    
-    // Parse waste data from HTML
-    const wasteTypeElements = document.querySelectorAll('.waste-type-item');
-    
-    // Extract data
-    const labels = [];
-    const data = [];
-    const colors = [
-        '#4CAF50', // Green
-        '#2196F3', // Blue
-        '#FFC107', // Yellow
-        '#9C27B0', // Purple
-        '#FF5722', // Deep Orange
-        '#795548', // Brown
-        '#607D8B', // Blue Grey
-        '#F44336'  // Red
-    ];
-    
-    wasteTypeElements.forEach((element, index) => {
-        const type = element.dataset.type;
-        const count = parseInt(element.dataset.count);
-        
-        labels.push(type);
-        data.push(count);
-    });
-    
-    // If no data, show a message
-    if (data.length === 0) {
-        chartContainer.innerHTML = `
-            <div class="alert alert-info">
-                No waste data available yet. Start classifying waste to see your distribution.
-            </div>
-        `;
-        return;
-    }
-    
-    // Create chart
-    const ctx = chartContainer.getContext('2d');
-    const wasteChart = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: labels,
-            datasets: [{
-                data: data,
-                backgroundColor: colors.slice(0, data.length),
-                borderWidth: 1,
-                borderColor: '#212529'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'right',
-                    labels: {
-                        color: '#f8f9fa',
-                        font: {
-                            size: 12
-                        }
-                    }
-                },
-                title: {
-                    display: true,
-                    text: 'Waste Type Distribution',
-                    color: '#f8f9fa',
-                    font: {
-                        size: 16
-                    }
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            const label = context.label || '';
-                            const value = context.raw || 0;
-                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            const percentage = Math.round((value / total) * 100);
-                            return `${label}: ${value} items (${percentage}%)`;
-                        }
-                    }
-                }
-            }
-        }
-    });
-}
-
-// Initialize carbon savings chart
-function initializeCarbonSavingsChart() {
-    const chartContainer = document.getElementById('carbon-savings-chart');
-    
-    if (!chartContainer) return;
-    
-    // Parse carbon data from HTML
-    const carbonDataElements = document.querySelectorAll('.carbon-data-item');
-    
-    // Extract data
-    const dates = [];
-    const carbonValues = [];
-    
-    carbonDataElements.forEach(element => {
-        const date = element.dataset.date;
-        const carbon = parseFloat(element.dataset.carbon);
-        
-        dates.push(date);
-        carbonValues.push(carbon);
-    });
-    
-    // If no data, show a message
-    if (carbonValues.length === 0) {
-        chartContainer.innerHTML = `
-            <div class="alert alert-info">
-                No carbon savings data available yet. Start recycling to track your impact.
-            </div>
-        `;
-        return;
-    }
-    
-    // Reverse arrays to show chronological order
-    dates.reverse();
-    carbonValues.reverse();
-    
-    // Create chart
-    const ctx = chartContainer.getContext('2d');
-    const carbonChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: dates,
-            datasets: [{
-                label: 'Carbon Saved (kg CO2)',
-                data: carbonValues,
-                fill: true,
-                backgroundColor: 'rgba(40, 167, 69, 0.2)',
-                borderColor: '#28a745',
-                tension: 0.4,
-                pointBackgroundColor: '#28a745',
-                pointBorderColor: '#fff',
-                pointRadius: 5,
-                pointHoverRadius: 7
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                x: {
-                    grid: {
-                        color: 'rgba(255, 255, 255, 0.1)'
-                    },
-                    ticks: {
-                        color: '#f8f9fa'
-                    }
-                },
-                y: {
-                    beginAtZero: true,
-                    grid: {
-                        color: 'rgba(255, 255, 255, 0.1)'
-                    },
-                    ticks: {
-                        color: '#f8f9fa'
-                    }
-                }
-            },
-            plugins: {
-                legend: {
-                    labels: {
-                        color: '#f8f9fa'
-                    }
-                },
-                title: {
-                    display: true,
-                    text: 'Daily Carbon Savings (Last 7 Days)',
-                    color: '#f8f9fa',
-                    font: {
-                        size: 16
-                    }
-                }
-            }
-        }
-    });
-}
-
-// Initialize leaderboard chart
-function initializeLeaderboardChart() {
-    const chartContainer = document.getElementById('leaderboard-chart');
-    
-    if (!chartContainer) return;
-    
-    // Parse leaderboard data from HTML
-    const leaderboardItems = document.querySelectorAll('.leaderboard-item');
-    
-    // Extract data
-    const usernames = [];
-    const points = [];
-    
-    leaderboardItems.forEach(item => {
-        const username = item.dataset.username;
-        const pointsValue = parseInt(item.dataset.points);
-        
-        usernames.push(username);
-        points.push(pointsValue);
-    });
-    
-    // If no data, show a message
-    if (points.length === 0) {
-        chartContainer.innerHTML = `
-            <div class="alert alert-info">
-                No leaderboard data available yet.
-            </div>
-        `;
-        return;
-    }
-    
-    // Limit to top 10 users
-    if (usernames.length > 10) {
-        usernames.length = 10;
-        points.length = 10;
-    }
-    
-    // Create chart
-    const ctx = chartContainer.getContext('2d');
-    const leaderboardChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: usernames,
-            datasets: [{
-                label: 'Points',
-                data: points,
-                backgroundColor: '#17a2b8',
-                borderColor: '#138496',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            indexAxis: 'y',
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                x: {
-                    beginAtZero: true,
-                    grid: {
-                        color: 'rgba(255, 255, 255, 0.1)'
-                    },
-                    ticks: {
-                        color: '#f8f9fa'
-                    }
-                },
-                y: {
-                    grid: {
-                        color: 'rgba(255, 255, 255, 0.1)'
-                    },
-                    ticks: {
-                        color: '#f8f9fa'
-                    }
-                }
-            },
-            plugins: {
-                legend: {
-                    display: false
-                },
-                title: {
-                    display: true,
-                    text: 'Top Recyclers Leaderboard',
-                    color: '#f8f9fa',
-                    font: {
-                        size: 16
-                    }
-                }
-            }
-        }
-    });
-}
-
-// Function to update analytics data via AJAX
-function refreshAnalyticsData() {
-    // Show loading spinner
-    document.getElementById('refresh-btn').innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Refreshing...';
-    
-    // Make AJAX request to get updated data
-    fetch('/analytics')
-        .then(response => response.text())
-        .then(html => {
-            // Create a temporary DOM element to parse the HTML
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = html;
-            
-            // Update each section with new data
-            const sections = [
-                'waste-distribution-container',
-                'carbon-savings-container',
-                'leaderboard-container',
-                'analytics-summary'
-            ];
-            
-            sections.forEach(sectionId => {
-                const newContent = tempDiv.querySelector(`#${sectionId}`);
-                const currentSection = document.getElementById(sectionId);
-                
-                if (newContent && currentSection) {
-                    currentSection.innerHTML = newContent.innerHTML;
-                }
-            });
-            
-            // Reinitialize charts
-            initializeWasteDistributionChart();
-            initializeCarbonSavingsChart();
-            initializeLeaderboardChart();
-            
-            // Reset refresh button
-            document.getElementById('refresh-btn').innerHTML = '<i class="fas fa-sync-alt"></i> Refresh Data';
-            
-            // Show success message
-            const alertsContainer = document.getElementById('analytics-alerts');
-            alertsContainer.innerHTML = `
-                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    Data refreshed successfully!
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            `;
-        })
-        .catch(error => {
-            console.error('Error refreshing analytics:', error);
-            
-            // Reset refresh button
-            document.getElementById('refresh-btn').innerHTML = '<i class="fas fa-sync-alt"></i> Refresh Data';
-            
-            // Show error message
-            const alertsContainer = document.getElementById('analytics-alerts');
-            alertsContainer.innerHTML = `
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    Failed to refresh data. Please try again.
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            `;
-        });
-}
-
-// Add event listener for refresh button
 document.addEventListener('DOMContentLoaded', function() {
-    const refreshBtn = document.getElementById('refresh-btn');
-    if (refreshBtn) {
-        refreshBtn.addEventListener('click', refreshAnalyticsData);
+    // Initialize waste distribution chart
+    const wasteDistributionCtx = document.getElementById('waste-distribution-chart');
+    if (wasteDistributionCtx) {
+        const wasteDistributionData = JSON.parse(wasteDistributionCtx.dataset.distribution || '{}');
+        
+        const labels = Object.keys(wasteDistributionData);
+        const data = Object.values(wasteDistributionData);
+        
+        // Define colors for waste types
+        const colors = {
+            'recyclable': 'rgba(54, 162, 235, 0.8)',
+            'organic': 'rgba(75, 192, 192, 0.8)',
+            'hazardous': 'rgba(255, 99, 132, 0.8)',
+            'landfill': 'rgba(169, 169, 169, 0.8)',
+            'electronic': 'rgba(153, 102, 255, 0.8)'
+        };
+        
+        // Map waste types to colors, default to gray if not found
+        const backgroundColors = labels.map(label => colors[label.toLowerCase()] || 'rgba(169, 169, 169, 0.8)');
+        
+        new Chart(wasteDistributionCtx, {
+            type: 'doughnut',
+            data: {
+                labels: labels.map(label => label.charAt(0).toUpperCase() + label.slice(1)),
+                datasets: [{
+                    data: data,
+                    backgroundColor: backgroundColors,
+                    borderColor: backgroundColors.map(color => color.replace('0.8', '1')),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = Math.round((value / total) * 100);
+                                return `${label}: ${value} (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    // Initialize carbon timeline chart
+    const carbonTimelineCtx = document.getElementById('carbon-timeline-chart');
+    if (carbonTimelineCtx) {
+        const carbonTimelineData = JSON.parse(carbonTimelineCtx.dataset.timeline || '{}');
+        
+        const dates = Object.keys(carbonTimelineData).sort();
+        const carbonValues = dates.map(date => carbonTimelineData[date]);
+        
+        // Calculate cumulative values
+        const cumulativeValues = [];
+        let sum = 0;
+        carbonValues.forEach(value => {
+            sum += value;
+            cumulativeValues.push(sum);
+        });
+        
+        new Chart(carbonTimelineCtx, {
+            type: 'line',
+            data: {
+                labels: dates,
+                datasets: [
+                    {
+                        label: 'Daily Carbon Saved (kg CO2e)',
+                        data: carbonValues,
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(75, 192, 192, 1)',
+                        tension: 0.1
+                    },
+                    {
+                        label: 'Cumulative Carbon Saved (kg CO2e)',
+                        data: cumulativeValues,
+                        backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                        borderColor: 'rgba(153, 102, 255, 1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(153, 102, 255, 1)',
+                        tension: 0.1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        title: {
+                            display: true,
+                            text: 'Date'
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Carbon Saved (kg CO2e)'
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                }
+            }
+        });
+    }
+    
+    // Calculate impact equivalencies
+    const totalCarbonSaved = parseFloat(document.getElementById('total-carbon-saved')?.dataset?.carbon || 0);
+    
+    if (totalCarbonSaved > 0) {
+        // Calculate equivalencies
+        const treesPlanted = (totalCarbonSaved / 21.77).toFixed(1);
+        const carMiles = (totalCarbonSaved / 0.404).toFixed(1);
+        const homeEnergy = (totalCarbonSaved / 0.417).toFixed(1);
+        
+        // Update the UI
+        document.getElementById('trees-equivalent').textContent = treesPlanted;
+        document.getElementById('car-miles-equivalent').textContent = carMiles;
+        document.getElementById('energy-equivalent').textContent = homeEnergy;
+    }
+    
+    // Progress towards next achievement
+    const pointsElement = document.getElementById('user-points');
+    if (pointsElement) {
+        const points = parseInt(pointsElement.dataset.points || 0);
+        const nextAchievementPoints = Math.ceil(points / 100) * 100;
+        const progress = (points % 100) || 100;
+        
+        // Update progress bar
+        const progressBar = document.getElementById('achievement-progress');
+        if (progressBar) {
+            progressBar.style.width = `${progress}%`;
+            progressBar.setAttribute('aria-valuenow', progress);
+            
+            document.getElementById('next-achievement-points').textContent = nextAchievementPoints;
+        }
     }
 });
+
+// Export analytics data as CSV
+function exportAnalyticsData() {
+    const wasteDistributionData = JSON.parse(document.getElementById('waste-distribution-chart').dataset.distribution || '{}');
+    const carbonTimelineData = JSON.parse(document.getElementById('carbon-timeline-chart').dataset.timeline || '{}');
+    
+    let csvContent = "data:text/csv;charset=utf-8,";
+    
+    // Add waste distribution data
+    csvContent += "Waste Distribution\n";
+    csvContent += "Waste Type,Count\n";
+    
+    for (const [type, count] of Object.entries(wasteDistributionData)) {
+        csvContent += `${type},${count}\n`;
+    }
+    
+    csvContent += "\nCarbon Timeline\n";
+    csvContent += "Date,Carbon Saved (kg CO2e)\n";
+    
+    // Add carbon timeline data
+    const sortedDates = Object.keys(carbonTimelineData).sort();
+    for (const date of sortedDates) {
+        csvContent += `${date},${carbonTimelineData[date]}\n`;
+    }
+    
+    // Create download link
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "eco_waste_analytics.csv");
+    document.body.appendChild(link);
+    
+    // Trigger download
+    link.click();
+    
+    // Clean up
+    document.body.removeChild(link);
+}
+
+// Share analytics on social media
+function shareAnalytics() {
+    const totalCarbonSaved = parseFloat(document.getElementById('total-carbon-saved')?.dataset?.carbon || 0);
+    const totalClassifications = document.getElementById('total-classifications')?.textContent || 0;
+    
+    const shareText = `I've classified ${totalClassifications} waste items and saved ${totalCarbonSaved.toFixed(2)} kg of CO2e using EcoWaste! Join me in making a positive impact on our planet. #SustainableLiving #EcoWaste`;
+    
+    if (navigator.share) {
+        navigator.share({
+            title: 'My Sustainability Impact',
+            text: shareText,
+            url: window.location.href,
+        })
+        .catch(error => console.log('Error sharing:', error));
+    } else {
+        // Fallback for browsers that don't support Web Share API
+        navigator.clipboard.writeText(shareText).then(() => {
+            alert('Share text copied to clipboard!');
+        });
+    }
+}

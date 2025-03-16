@@ -1,410 +1,265 @@
-// Wait for the DOM to be fully loaded
+// Gamification and reward system functionality
+
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize the achievement badges
-    initializeAchievements();
-    
-    // Check for achievements notification when page loads
-    checkForAchievements();
-    
-    // Add event listeners for the leaderboard tabs
-    const leaderboardTabs = document.querySelectorAll('[data-bs-toggle="pill"][data-leaderboard]');
-    leaderboardTabs.forEach(tab => {
-        tab.addEventListener('shown.bs.tab', function(event) {
-            const leaderboardType = event.target.getAttribute('data-leaderboard');
-            loadLeaderboard(leaderboardType);
-        });
-    });
-    
-    // Initialize tippy.js tooltips if available
-    if (typeof tippy !== 'undefined') {
-        tippy('[data-tippy-content]');
-    }
+    initializeGameElements();
+    checkForLevelUp();
+    setupAchievementTracking();
 });
 
-// Initialize achievement badges with animations and tooltips
-function initializeAchievements() {
-    const achievementBadges = document.querySelectorAll('.achievement-badge');
+// Initialize game elements
+function initializeGameElements() {
+    updateProgressBar();
+    initializeTooltips();
+}
+
+// Update level progress bar
+function updateProgressBar() {
+    const progressBar = document.getElementById('level-progress');
+    if (!progressBar) return;
     
-    achievementBadges.forEach((badge, index) => {
-        // Add a staggered animation delay
-        badge.style.animationDelay = `${index * 0.1}s`;
-        
-        // Add hover effect
-        badge.addEventListener('mouseenter', function() {
-            this.classList.add('achievement-hover');
-        });
-        
-        badge.addEventListener('mouseleave', function() {
-            this.classList.remove('achievement-hover');
-        });
-        
-        // For locked achievements, add a different style
-        if (badge.classList.contains('locked')) {
-            badge.style.filter = 'grayscale(1) opacity(0.6)';
+    const progressValue = progressBar.getAttribute('data-progress') || 0;
+    
+    // Animate the progress bar
+    let width = 0;
+    const interval = setInterval(function() {
+        if (width >= progressValue) {
+            clearInterval(interval);
+        } else {
+            width++;
+            progressBar.style.width = width + '%';
+            progressBar.setAttribute('aria-valuenow', width);
         }
+    }, 10);
+}
+
+// Initialize tooltips
+function initializeTooltips() {
+    // Initialize Bootstrap tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
     });
 }
 
-// Check if the user has earned new achievements since last visit
-function checkForAchievements() {
-    // Check if there's a new achievement notification in session storage
-    const newAchievements = sessionStorage.getItem('newAchievements');
+// Check for level up
+function checkForLevelUp() {
+    const levelUpElement = document.getElementById('level-up-notification');
+    if (!levelUpElement) return;
     
-    if (newAchievements) {
-        // Parse the achievements
-        const achievements = JSON.parse(newAchievements);
-        
-        // Display a congratulatory modal
-        showAchievementModal(achievements);
-        
-        // Clear the session storage
-        sessionStorage.removeItem('newAchievements');
+    const hasLeveledUp = levelUpElement.getAttribute('data-level-up') === 'true';
+    
+    if (hasLeveledUp) {
+        showLevelUpNotification();
     }
 }
 
-// Show modal for new achievements
-function showAchievementModal(achievements) {
-    // Create modal content for each achievement
-    let achievementsHTML = '';
+// Show level up notification
+function showLevelUpNotification() {
+    const level = document.getElementById('user-level') ? 
+                 document.getElementById('user-level').textContent : '?';
     
-    achievements.forEach(achievement => {
-        achievementsHTML += `
-            <div class="achievement-item my-3 d-flex align-items-center">
-                <div class="achievement-badge me-3">
-                    <i class="fas ${achievement.icon || 'fa-award'} fa-2x"></i>
-                </div>
-                <div>
-                    <h5 class="mb-1">${achievement.name}</h5>
-                    <p class="mb-0 text-muted">${achievement.description}</p>
-                </div>
+    // Create the notification element
+    const notification = document.createElement('div');
+    notification.className = 'level-up-notification';
+    notification.innerHTML = `
+        <div class="level-up-content">
+            <div class="level-up-icon">
+                <i class="fas fa-award"></i>
             </div>
-        `;
-    });
-    
-    // Create the modal
-    const modalHTML = `
-        <div class="modal fade" id="achievementModal" tabindex="-1" aria-labelledby="achievementModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header bg-success text-white">
-                        <h5 class="modal-title" id="achievementModalLabel">
-                            <i class="fas fa-trophy"></i> Achievement Unlocked!
-                        </h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="text-center mb-4">
-                            <div class="achievement-animation">
-                                <i class="fas fa-award fa-4x text-warning"></i>
-                            </div>
-                            <h4 class="mt-3">Congratulations!</h4>
-                            <p>You've earned ${achievements.length > 1 ? 'new achievements' : 'a new achievement'}!</p>
-                        </div>
-                        
-                        <div class="achievements-list">
-                            ${achievementsHTML}
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Awesome!</button>
-                    </div>
-                </div>
-            </div>
+            <h3>Level Up!</h3>
+            <p>Congratulations! You've reached Level ${level}</p>
+            <p>Keep up the great work in reducing waste!</p>
+            <button class="btn btn-primary mt-3" onclick="dismissLevelUp(this.parentNode.parentNode)">
+                Awesome!
+            </button>
         </div>
     `;
     
-    // Add the modal to the document
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    // Add to document
+    document.body.appendChild(notification);
     
-    // Show the modal
-    const achievementModal = new bootstrap.Modal(document.getElementById('achievementModal'));
-    achievementModal.show();
-    
-    // Remove the modal from DOM when hidden
-    document.getElementById('achievementModal').addEventListener('hidden.bs.modal', function() {
-        this.remove();
-    });
-}
-
-// Load different types of leaderboards
-function loadLeaderboard(leaderboardType) {
-    const leaderboardContainer = document.getElementById('leaderboard-content');
-    
-    if (!leaderboardContainer) return;
-    
-    // Show loading indicator
-    leaderboardContainer.innerHTML = `
-        <div class="text-center my-5">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Loading...</span>
-            </div>
-            <p class="mt-2">Loading leaderboard...</p>
-        </div>
-    `;
-    
-    // Fetch the appropriate leaderboard data
-    // In a real app, this would be an API call
-    // For demo purposes, we'll simulate different leaderboards
+    // Add animation classes after a small delay
     setTimeout(() => {
-        let leaderboardHTML = '';
-        
-        switch (leaderboardType) {
-            case 'points':
-                leaderboardHTML = generatePointsLeaderboard();
-                break;
-            case 'carbon':
-                leaderboardHTML = generateCarbonLeaderboard();
-                break;
-            case 'recycling':
-                leaderboardHTML = generateRecyclingLeaderboard();
-                break;
-            default:
-                leaderboardHTML = generatePointsLeaderboard();
-        }
-        
-        leaderboardContainer.innerHTML = leaderboardHTML;
-    }, 800); // Simulate network delay
-}
-
-// Generate points leaderboard HTML
-function generatePointsLeaderboard() {
-    // In a real app, this data would come from an API
-    // For demo purposes, we'll use hardcoded data
-    const leaderboardItems = document.querySelectorAll('.leaderboard-item');
-    let leaderboardData = [];
-    
-    leaderboardItems.forEach(item => {
-        leaderboardData.push({
-            username: item.dataset.username,
-            points: parseInt(item.dataset.points),
-            avatar: item.dataset.avatar || getRandomAvatar()
-        });
-    });
-    
-    // If no data from DOM, use sample data
-    if (leaderboardData.length === 0) {
-        leaderboardData = getSampleLeaderboardData();
-    }
-    
-    // Sort by points (highest first)
-    leaderboardData.sort((a, b) => b.points - a.points);
-    
-    // Generate the HTML
-    return generateLeaderboardHTML(leaderboardData, 'Points', 'trophy');
-}
-
-// Generate carbon savings leaderboard HTML
-function generateCarbonLeaderboard() {
-    // In a real app, this data would come from an API
-    // For demo purposes, we'll use simulated data
-    const sampleData = getSampleLeaderboardData();
-    
-    // Modify the data to show carbon savings instead of points
-    const leaderboardData = sampleData.map(user => {
-        return {
-            ...user,
-            // Simulate carbon savings as roughly proportional to points
-            points: Math.round(user.points * 0.8) / 10
-        };
-    });
-    
-    // Sort by carbon savings (highest first)
-    leaderboardData.sort((a, b) => b.points - a.points);
-    
-    // Generate the HTML
-    return generateLeaderboardHTML(leaderboardData, 'kg CO2 Saved', 'leaf');
-}
-
-// Generate recycling count leaderboard HTML
-function generateRecyclingLeaderboard() {
-    // In a real app, this data would come from an API
-    // For demo purposes, we'll use simulated data
-    const sampleData = getSampleLeaderboardData();
-    
-    // Modify the data to show recycling count instead of points
-    const leaderboardData = sampleData.map(user => {
-        return {
-            ...user,
-            // Simulate recycling count as roughly proportional to points
-            points: Math.round(user.points / 15)
-        };
-    });
-    
-    // Sort by recycling count (highest first)
-    leaderboardData.sort((a, b) => b.points - a.points);
-    
-    // Generate the HTML
-    return generateLeaderboardHTML(leaderboardData, 'Items Recycled', 'recycle');
-}
-
-// Generate generic leaderboard HTML
-function generateLeaderboardHTML(data, pointsLabel, icon) {
-    let html = `
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead>
-                    <tr>
-                        <th scope="col">Rank</th>
-                        <th scope="col">User</th>
-                        <th scope="col">${pointsLabel}</th>
-                    </tr>
-                </thead>
-                <tbody>
-    `;
-    
-    // Add rows for each user
-    data.forEach((user, index) => {
-        // Determine if this is the current user
-        const isCurrentUser = user.isCurrentUser || false;
-        
-        // Generate row with appropriate highlighting
-        html += `
-            <tr class="${isCurrentUser ? 'table-primary' : ''}">
-                <td class="text-center">
-                    ${getPositionHTML(index + 1)}
-                </td>
-                <td>
-                    <div class="d-flex align-items-center">
-                        <div class="avatar me-3">
-                            ${user.avatar || getInitialsAvatar(user.username)}
-                        </div>
-                        <span>${user.username}</span>
-                        ${isCurrentUser ? '<span class="badge bg-primary ms-2">You</span>' : ''}
-                    </div>
-                </td>
-                <td>
-                    <span class="badge bg-success rounded-pill">
-                        <i class="fas fa-${icon}"></i> ${user.points}
-                    </span>
-                </td>
-            </tr>
-        `;
-    });
-    
-    html += `
-                </tbody>
-            </table>
-        </div>
-    `;
-    
-    return html;
-}
-
-// Get HTML for position indicators (gold, silver, bronze medals)
-function getPositionHTML(position) {
-    switch (position) {
-        case 1:
-            return '<div class="position-medal gold"><i class="fas fa-medal"></i><span>1</span></div>';
-        case 2:
-            return '<div class="position-medal silver"><i class="fas fa-medal"></i><span>2</span></div>';
-        case 3:
-            return '<div class="position-medal bronze"><i class="fas fa-medal"></i><span>3</span></div>';
-        default:
-            return `<div class="position-number">${position}</div>`;
-    }
-}
-
-// Get initials avatar HTML
-function getInitialsAvatar(username) {
-    // Get the first letter of the username
-    const initial = username.charAt(0).toUpperCase();
-    
-    // Generate a consistent color based on the username
-    const hue = getHashValue(username) % 360;
-    const color = `hsl(${hue}, 70%, 60%)`;
-    
-    return `
-        <div class="initials-avatar" style="background-color: ${color};">
-            ${initial}
-        </div>
-    `;
-}
-
-// Get a random avatar SVG
-function getRandomAvatar() {
-    // Create a simple SVG avatar with random colors
-    const hue = Math.floor(Math.random() * 360);
-    const color = `hsl(${hue}, 70%, 60%)`;
-    
-    return `
-        <div class="initials-avatar" style="background-color: ${color};">
-            <i class="fas fa-user"></i>
-        </div>
-    `;
-}
-
-// Get a hash value from a string
-function getHashValue(str) {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-        hash = ((hash << 5) - hash) + str.charCodeAt(i);
-        hash |= 0; // Convert to 32bit integer
-    }
-    return Math.abs(hash);
-}
-
-// Get sample leaderboard data for demo purposes
-function getSampleLeaderboardData() {
-    return [
-        { username: "EcoWarrior", points: 1250, isCurrentUser: true },
-        { username: "GreenThumb", points: 1420 },
-        { username: "RecyclePro", points: 980 },
-        { username: "EarthSaver", points: 1560 },
-        { username: "WasteReducer", points: 850 },
-        { username: "EcoChampion", points: 1320 },
-        { username: "PlanetFriend", points: 760 },
-        { username: "ClimateGuardian", points: 1100 },
-        { username: "ZeroWaster", points: 1480 },
-        { username: "GreenLiving", points: 920 }
-    ];
-}
-
-// Function to handle points animation when user earns points
-function animatePointsEarned(points) {
-    // Create the floating points element
-    const pointsElement = document.createElement('div');
-    pointsElement.className = 'floating-points';
-    pointsElement.innerHTML = `+${points} <i class="fas fa-star"></i>`;
-    
-    // Add to the document
-    document.body.appendChild(pointsElement);
-    
-    // Start the animation
-    setTimeout(() => {
-        pointsElement.classList.add('animate');
-        
-        // Remove the element after animation completes
-        setTimeout(() => {
-            pointsElement.remove();
-        }, 2000);
+        notification.classList.add('show');
     }, 100);
     
-    // Also update points counter if it exists
-    const pointsCounter = document.getElementById('points-counter');
-    if (pointsCounter) {
-        const currentPoints = parseInt(pointsCounter.textContent);
-        const newPoints = currentPoints + points;
+    // Play sound effect if available
+    playSound('level-up');
+}
+
+// Dismiss level up notification
+function dismissLevelUp(element) {
+    if (!element) return;
+    
+    element.classList.remove('show');
+    
+    // Remove from DOM after animation
+    setTimeout(() => {
+        if (element.parentNode) {
+            element.parentNode.removeChild(element);
+        }
+    }, 500);
+}
+
+// Setup achievement tracking
+function setupAchievementTracking() {
+    const achievements = document.querySelectorAll('.badge-item');
+    
+    achievements.forEach(achievement => {
+        const earned = achievement.getAttribute('data-earned') === 'true';
         
-        // Animate counting up
-        animateCounterUp(pointsCounter, currentPoints, newPoints);
+        if (earned) {
+            achievement.classList.add('badge-earned');
+            achievement.classList.remove('badge-unearned');
+        } else {
+            achievement.classList.add('badge-unearned');
+            achievement.classList.remove('badge-earned');
+        }
+    });
+}
+
+// Award new badge
+function awardBadge(badgeId) {
+    const badge = document.querySelector(`.badge-item[data-badge-id="${badgeId}"]`);
+    if (!badge || badge.getAttribute('data-earned') === 'true') return;
+    
+    // Mark as earned
+    badge.setAttribute('data-earned', 'true');
+    badge.classList.add('badge-earned');
+    badge.classList.remove('badge-unearned');
+    
+    // Show notification
+    const badgeName = badge.getAttribute('data-badge-name') || 'New Badge';
+    
+    // Create notification
+    const notification = document.createElement('div');
+    notification.className = 'badge-notification';
+    notification.innerHTML = `
+        <div class="badge-notification-content">
+            <div class="badge-icon">
+                <i class="${badge.querySelector('i').className}"></i>
+            </div>
+            <h4>New Badge Earned!</h4>
+            <p>${badgeName}</p>
+            <button class="btn btn-sm btn-primary mt-2" onclick="dismissNotification(this.parentNode.parentNode)">
+                Nice!
+            </button>
+        </div>
+    `;
+    
+    // Add to document
+    document.body.appendChild(notification);
+    
+    // Add animation classes after a small delay
+    setTimeout(() => {
+        notification.classList.add('show');
+    }, 100);
+    
+    // Play sound effect if available
+    playSound('badge-earned');
+}
+
+// Dismiss notification
+function dismissNotification(element) {
+    if (!element) return;
+    
+    element.classList.remove('show');
+    
+    // Remove from DOM after animation
+    setTimeout(() => {
+        if (element.parentNode) {
+            element.parentNode.removeChild(element);
+        }
+    }, 500);
+}
+
+// Play sound effect
+function playSound(soundName) {
+    // Check if sound is enabled in user preferences
+    const soundEnabled = localStorage.getItem('sound_enabled') !== 'false';
+    if (!soundEnabled) return;
+    
+    // Sound effect URLs (could be replaced with actual audio files)
+    const soundEffects = {
+        'level-up': 'https://freesound.org/data/previews/270/270404_5123851-lq.mp3',
+        'badge-earned': 'https://freesound.org/data/previews/270/270402_5123851-lq.mp3',
+        'points-earned': 'https://freesound.org/data/previews/270/270342_5123851-lq.mp3'
+    };
+    
+    // If sound exists, play it
+    if (soundEffects[soundName]) {
+        try {
+            const audio = new Audio(soundEffects[soundName]);
+            audio.volume = 0.5;  // 50% volume
+            audio.play().catch(e => console.log('Sound play error:', e));
+        } catch (e) {
+            console.log('Sound error:', e);
+        }
     }
 }
 
-// Function to animate a counter increasing
-function animateCounterUp(element, start, end) {
-    let current = start;
-    const increment = Math.max(1, Math.floor((end - start) / 50));
-    const timer = setInterval(() => {
-        current += increment;
-        if (current >= end) {
-            current = end;
-            clearInterval(timer);
+// Toggle sound effects
+function toggleSoundEffects() {
+    const soundEnabled = localStorage.getItem('sound_enabled') !== 'false';
+    
+    // Toggle the setting
+    localStorage.setItem('sound_enabled', !soundEnabled);
+    
+    // Update button if it exists
+    const soundButton = document.getElementById('sound-toggle');
+    if (soundButton) {
+        if (!soundEnabled) {
+            soundButton.innerHTML = '<i class="fas fa-volume-up"></i>';
+            soundButton.setAttribute('title', 'Sound On');
+            playSound('points-earned');  // Play a test sound
+        } else {
+            soundButton.innerHTML = '<i class="fas fa-volume-mute"></i>';
+            soundButton.setAttribute('title', 'Sound Off');
         }
-        element.textContent = current;
-    }, 20);
+        
+        // Refresh tooltip if using Bootstrap tooltips
+        const tooltip = bootstrap.Tooltip.getInstance(soundButton);
+        if (tooltip) {
+            tooltip.dispose();
+            new bootstrap.Tooltip(soundButton);
+        }
+    }
 }
 
-// Store new achievements in session storage for notification
-function storeNewAchievements(achievements) {
-    sessionStorage.setItem('newAchievements', JSON.stringify(achievements));
+// Add points animation
+function animatePointsEarned(points) {
+    if (!points || points <= 0) return;
+    
+    // Create points animation element
+    const pointsAnimation = document.createElement('div');
+    pointsAnimation.className = 'points-animation';
+    pointsAnimation.innerHTML = `+${points} points`;
+    
+    // Add to document
+    document.body.appendChild(pointsAnimation);
+    
+    // Position randomly on the top half of the screen
+    const randomX = Math.floor(Math.random() * (window.innerWidth - 200)) + 100;
+    const randomY = Math.floor(Math.random() * (window.innerHeight / 2)) + 100;
+    
+    pointsAnimation.style.left = `${randomX}px`;
+    pointsAnimation.style.top = `${randomY}px`;
+    
+    // Add animation class
+    setTimeout(() => {
+        pointsAnimation.classList.add('show');
+    }, 10);
+    
+    // Remove after animation completes
+    setTimeout(() => {
+        pointsAnimation.classList.remove('show');
+        setTimeout(() => {
+            if (pointsAnimation.parentNode) {
+                pointsAnimation.parentNode.removeChild(pointsAnimation);
+            }
+        }, 1000);
+    }, 2000);
+    
+    // Play sound effect
+    playSound('points-earned');
 }

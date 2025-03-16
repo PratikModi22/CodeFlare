@@ -1,155 +1,82 @@
-{% extends "base.html" %}
+{% extends "layout.html" %}
 
-{% block title %}Waste Map - EcoTrack{% endblock %}
+{% block title %}Recycling Centers Map - EcoSort{% endblock %}
 
-{% block extra_head %}
+{% block extra_css %}
 <style>
-    #map-container {
-        height: 500px;
+    #map {
+        height: 600px;
+        width: 100%;
         border-radius: 8px;
-        overflow: hidden;
     }
-    
+    .map-sidebar {
+        max-height: 600px;
+        overflow-y: auto;
+    }
     .center-card {
-        transition: transform 0.2s;
+        cursor: pointer;
+        transition: all 0.2s ease;
     }
-    
     .center-card:hover {
-        transform: translateY(-5px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        transform: translateY(-2px);
     }
-    
-    .waste-type-icon {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 24px;
-        height: 24px;
-        border-radius: 50%;
-        background-color: var(--bs-primary);
-        color: white;
-        margin-right: 5px;
-    }
-    
-    .user-marker-icon {
-        background: none !important;
-    }
-    
-    .center-popup h5 {
-        margin-bottom: 5px;
+    .center-details {
+        max-height: 200px;
+        overflow-y: auto;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container">
+<div class="container py-5">
     <h1 class="mb-4">Recycling Centers Map</h1>
     
-    <div class="row g-4">
-        <!-- Map and search column -->
-        <div class="col-lg-8">
-            <div class="card mb-4">
-                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Find Recycling Centers</h5>
-                    <button class="btn btn-sm btn-light" data-bs-toggle="modal" data-bs-target="#add-center-modal">
-                        <i class="fas fa-plus me-1"></i>Add Center
-                    </button>
-                </div>
-                <div class="card-body">
-                    <!-- Search form -->
-                    <form id="search-location-form" class="mb-3">
-                        <div class="input-group">
-                            <input type="text" class="form-control" id="search-address" placeholder="Enter an address or city...">
-                            <button class="btn btn-primary" type="submit">
-                                <i class="fas fa-search me-1"></i>Search
-                            </button>
-                        </div>
-                    </form>
-                    
-                    <!-- Map container -->
-                    <div id="map-container"></div>
-                    
-                    <!-- Loading spinner -->
-                    <div id="loading-spinner" class="text-center py-4" style="display: none;">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                        </div>
-                        <p class="mt-2">Finding recycling centers...</p>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Waste types legend -->
+    <div class="row mb-4">
+        <div class="col-md-12">
             <div class="card">
-                <div class="card-header bg-secondary text-white">
-                    <h5 class="mb-0">Waste Types Legend</h5>
-                </div>
                 <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-3 col-6 mb-2">
-                            <span class="waste-type-icon waste-plastic">
-                                <i class="fas fa-wine-bottle"></i>
-                            </span>
-                            <span>Plastic</span>
+                    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+                        <div>
+                            <h5 class="mb-0">Find Recycling Centers Near You</h5>
+                            <p class="text-muted small mb-0">Locate the nearest places to responsibly dispose of your waste</p>
                         </div>
-                        <div class="col-md-3 col-6 mb-2">
-                            <span class="waste-type-icon waste-paper">
-                                <i class="fas fa-newspaper"></i>
-                            </span>
-                            <span>Paper</span>
-                        </div>
-                        <div class="col-md-3 col-6 mb-2">
-                            <span class="waste-type-icon waste-glass">
-                                <i class="fas fa-glass-martini"></i>
-                            </span>
-                            <span>Glass</span>
-                        </div>
-                        <div class="col-md-3 col-6 mb-2">
-                            <span class="waste-type-icon waste-metal">
-                                <i class="fas fa-bacon"></i>
-                            </span>
-                            <span>Metal</span>
-                        </div>
-                        <div class="col-md-3 col-6 mb-2">
-                            <span class="waste-type-icon waste-organic">
-                                <i class="fas fa-apple-alt"></i>
-                            </span>
-                            <span>Organic</span>
-                        </div>
-                        <div class="col-md-3 col-6 mb-2">
-                            <span class="waste-type-icon waste-electronic">
-                                <i class="fas fa-laptop"></i>
-                            </span>
-                            <span>Electronic</span>
-                        </div>
-                        <div class="col-md-3 col-6 mb-2">
-                            <span class="waste-type-icon waste-hazardous">
-                                <i class="fas fa-skull-crossbones"></i>
-                            </span>
-                            <span>Hazardous</span>
-                        </div>
-                        <div class="col-md-3 col-6 mb-2">
-                            <span class="waste-type-icon waste-nonrecyclable">
-                                <i class="fas fa-trash"></i>
-                            </span>
-                            <span>Non-recyclable</span>
+                        <div class="d-flex align-items-center">
+                            <button id="getUserLocationBtn" class="btn btn-primary me-2">
+                                <i class="fas fa-location-arrow me-2"></i>Use My Location
+                            </button>
+                            <div class="input-group" style="width: 300px;">
+                                <input type="number" id="radiusInput" class="form-control" placeholder="Radius (km)" value="10" min="1" max="50">
+                                <button id="searchBtn" class="btn btn-success">
+                                    <i class="fas fa-search me-2"></i>Search
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        
-        <!-- Centers list column -->
-        <div class="col-lg-4">
+    </div>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4 mb-md-0">
+                <div class="card-body p-2">
+                    <div id="map"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
             <div class="card">
                 <div class="card-header bg-success text-white">
-                    <h5 class="mb-0">Nearby Recycling Centers</h5>
+                    <h5 class="mb-0">Nearby Centers</h5>
                 </div>
                 <div class="card-body p-0">
-                    <div id="centers-list" class="p-3">
-                        <!-- Centers will be populated dynamically -->
-                        <div class="text-center py-4">
-                            <i class="fas fa-map-marker-alt fa-3x mb-3 text-muted"></i>
-                            <p>Enable location services to find recycling centers near you.</p>
+                    <div id="centersList" class="map-sidebar">
+                        <!-- Centers will be listed here -->
+                        <div class="text-center py-5">
+                            <i class="fas fa-map-marker-alt text-muted mb-3" style="font-size: 3rem;"></i>
+                            <p class="lead text-muted">Use the "Use My Location" button to find recycling centers near you</p>
                         </div>
                     </div>
                 </div>
@@ -158,72 +85,299 @@
     </div>
 </div>
 
-<!-- Add Recycling Center Modal -->
-<div class="modal fade" id="add-center-modal" tabindex="-1" aria-labelledby="add-center-label" aria-hidden="true">
+<!-- Center Details Modal -->
+<div class="modal fade" id="centerDetailsModal" tabindex="-1" aria-labelledby="centerDetailsModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title" id="add-center-label">Add Recycling Center</h5>
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="centerDetailsModalTitle">Center Details</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form id="add-center-form">
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label for="center-name" class="form-label">Center Name</label>
-                            <input type="text" class="form-control" id="center-name" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="center-address" class="form-label">Address</label>
-                            <input type="text" class="form-control" id="center-address" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="center-latitude" class="form-label">Latitude</label>
-                            <input type="number" class="form-control" id="center-latitude" step="0.000001" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="center-longitude" class="form-label">Longitude</label>
-                            <input type="number" class="form-control" id="center-longitude" step="0.000001" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="center-phone" class="form-label">Phone Number</label>
-                            <input type="tel" class="form-control" id="center-phone">
-                        </div>
-                        <div class="col-md-6">
-                            <label for="center-website" class="form-label">Website</label>
-                            <input type="url" class="form-control" id="center-website">
-                        </div>
-                        <div class="col-12">
-                            <label for="center-description" class="form-label">Description</label>
-                            <textarea class="form-control" id="center-description" rows="3"></textarea>
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label">Accepted Waste Types</label>
-                            <div class="row">
-                                {% for category in categories %}
-                                <div class="col-md-3 col-6">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="accepted-waste" id="waste-{{ category.id }}" value="{{ category.id }}">
-                                        <label class="form-check-label" for="waste-{{ category.id }}">
-                                            {{ category.name }}
-                                        </label>
-                                    </div>
-                                </div>
-                                {% endfor %}
-                            </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Address</h6>
+                        <p id="centerAddress" class="mb-3"></p>
+                        
+                        <h6>Contact Information</h6>
+                        <p id="centerContact" class="mb-3"></p>
+                        
+                        <h6>Accepted Waste Types</h6>
+                        <div id="centerAcceptedTypes" class="mb-3"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Operating Hours</h6>
+                        <div id="centerHours" class="mb-3"></div>
+                        
+                        <h6>Distance</h6>
+                        <p id="centerDistance" class="mb-3"></p>
+                        
+                        <div class="d-grid gap-2">
+                            <a id="centerDirections" href="#" class="btn btn-primary" target="_blank">
+                                <i class="fas fa-directions me-2"></i>Get Directions
+                            </a>
+                            <a id="centerWebsite" href="#" class="btn btn-outline-primary" target="_blank">
+                                <i class="fas fa-globe me-2"></i>Visit Website
+                            </a>
                         </div>
                     </div>
-                    <div class="text-end mt-4">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary">Add Center</button>
-                    </div>
-                </form>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-success" id="logRecyclingBtn">
+                    <i class="fas fa-clipboard-check me-2"></i>Log Recycling Visit
+                </button>
             </div>
         </div>
     </div>
 </div>
 {% endblock %}
 
-{% block scripts %}
-<script src="{{ url_for('static', filename='js/waste_map.js') }}"></script>
+{% block extra_js %}
+<script>
+    // Placeholder for Google Maps implementation
+    // In the real app, you would use the Google Maps API
+    
+    let map;
+    let userMarker;
+    let centerMarkers = [];
+    let currentPosition = null;
+    
+    function initMap() {
+        // Create a simple placeholder map
+        const mapElement = document.getElementById('map');
+        
+        // Display placeholder message until Google Maps API is integrated
+        mapElement.innerHTML = `
+            <div class="d-flex flex-column align-items-center justify-content-center h-100 bg-light">
+                <i class="fas fa-map-marked-alt text-muted mb-3" style="font-size: 5rem;"></i>
+                <h3 class="text-muted">Map Feature Coming Soon</h3>
+                <p class="text-muted text-center">Google Maps integration will be available once API keys are configured.</p>
+                <p class="text-muted text-center">This feature will allow you to find recycling centers near you.</p>
+                <button class="btn btn-primary mt-3" id="simulateMapBtn">
+                    <i class="fas fa-vial me-2"></i>Simulate Map Experience
+                </button>
+            </div>
+        `;
+        
+        // Add event listener to simulate map experience
+        document.getElementById('simulateMapBtn').addEventListener('click', function() {
+            simulateMapExperience();
+        });
+    }
+    
+    function simulateMapExperience() {
+        // Simulate finding nearby centers with placeholder data
+        const placeholderCenters = [
+            {
+                id: 1,
+                name: "City Recycling Center",
+                address: "123 Green Street, Eco City",
+                phone: "(555) 123-4567",
+                website: "https://example.com/recycling",
+                accepted_types: "Paper, Plastic, Glass, Metal",
+                distance: "1.2 km",
+                hours: {
+                    "Monday": "8:00 AM - 6:00 PM",
+                    "Tuesday": "8:00 AM - 6:00 PM",
+                    "Wednesday": "8:00 AM - 6:00 PM",
+                    "Thursday": "8:00 AM - 6:00 PM",
+                    "Friday": "8:00 AM - 6:00 PM",
+                    "Saturday": "9:00 AM - 4:00 PM",
+                    "Sunday": "Closed"
+                }
+            },
+            {
+                id: 2,
+                name: "EcoWaste Solutions",
+                address: "456 Sustainability Ave, Green Village",
+                phone: "(555) 987-6543",
+                website: "https://example.com/ecowaste",
+                accepted_types: "Paper, Plastic, Electronics, Batteries",
+                distance: "3.4 km",
+                hours: {
+                    "Monday": "9:00 AM - 5:00 PM",
+                    "Tuesday": "9:00 AM - 5:00 PM",
+                    "Wednesday": "9:00 AM - 5:00 PM",
+                    "Thursday": "9:00 AM - 5:00 PM",
+                    "Friday": "9:00 AM - 5:00 PM",
+                    "Saturday": "10:00 AM - 2:00 PM",
+                    "Sunday": "Closed"
+                }
+            },
+            {
+                id: 3,
+                name: "Hazardous Waste Facility",
+                address: "789 Environmental Blvd, Sustainability Town",
+                phone: "(555) 456-7890",
+                website: "https://example.com/hazardous",
+                accepted_types: "Batteries, Paint, Chemicals, Electronics",
+                distance: "5.7 km",
+                hours: {
+                    "Monday": "8:30 AM - 4:30 PM",
+                    "Tuesday": "8:30 AM - 4:30 PM",
+                    "Wednesday": "8:30 AM - 4:30 PM",
+                    "Thursday": "8:30 AM - 4:30 PM",
+                    "Friday": "8:30 AM - 4:30 PM",
+                    "Saturday": "Closed",
+                    "Sunday": "Closed"
+                }
+            }
+        ];
+        
+        displayCenters(placeholderCenters);
+        
+        // Show toast notification
+        const toastHTML = `
+            <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 5">
+                <div class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="toast-header bg-success text-white">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong class="me-auto">Map Simulation</strong>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                    <div class="toast-body">
+                        Found 3 recycling centers near your simulated location.
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        const toastContainer = document.createElement('div');
+        toastContainer.innerHTML = toastHTML;
+        document.body.appendChild(toastContainer);
+        
+        // Replace map placeholder with a static map image
+        document.getElementById('map').innerHTML = `
+            <div class="position-relative">
+                <img src="https://i.imgur.com/tNzarAD.png" class="img-fluid w-100 h-100" style="border-radius: 8px;" alt="Map placeholder">
+                <div class="position-absolute top-50 start-50 translate-middle">
+                    <span class="badge bg-primary p-3 rounded-circle">
+                        <i class="fas fa-map-marker-alt fa-2x"></i>
+                    </span>
+                </div>
+            </div>
+        `;
+        
+        // Set up event listeners for the buttons
+        document.getElementById('getUserLocationBtn').addEventListener('click', function() {
+            // Simulate getting location
+            displayCenters(placeholderCenters);
+        });
+        
+        document.getElementById('searchBtn').addEventListener('click', function() {
+            // Simulate search
+            const radius = document.getElementById('radiusInput').value;
+            displayCenters(placeholderCenters.slice(0, radius > 5 ? 3 : 2));
+        });
+    }
+    
+    function displayCenters(centers) {
+        const centersList = document.getElementById('centersList');
+        
+        if (centers.length === 0) {
+            centersList.innerHTML = `
+                <div class="text-center py-5">
+                    <i class="fas fa-exclamation-circle text-muted mb-3" style="font-size: 3rem;"></i>
+                    <p class="lead text-muted">No recycling centers found in this area</p>
+                </div>
+            `;
+            return;
+        }
+        
+        let centersHTML = '';
+        
+        centers.forEach((center, index) => {
+            centersHTML += `
+                <div class="center-card p-3 border-bottom" data-center-id="${center.id}">
+                    <h5 class="mb-1">${center.name}</h5>
+                    <p class="text-muted mb-2 small">${center.address}</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="badge bg-light text-dark">${center.distance}</span>
+                        <button class="btn btn-sm btn-outline-success view-details-btn" data-index="${index}">
+                            View Details
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+        
+        centersList.innerHTML = centersHTML;
+        
+        // Add event listeners to the buttons
+        document.querySelectorAll('.view-details-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const index = this.getAttribute('data-index');
+                showCenterDetails(centers[index]);
+            });
+        });
+    }
+    
+    function showCenterDetails(center) {
+        // Set modal content
+        document.getElementById('centerDetailsModalTitle').textContent = center.name;
+        document.getElementById('centerAddress').textContent = center.address;
+        document.getElementById('centerContact').innerHTML = `
+            Phone: ${center.phone}<br>
+            Website: <a href="${center.website}" target="_blank">${center.website}</a>
+        `;
+        
+        // Format accepted types as badges
+        const acceptedTypes = center.accepted_types.split(', ');
+        let typesHTML = '';
+        acceptedTypes.forEach(type => {
+            let badgeClass = 'bg-secondary';
+            
+            if (type.toLowerCase().includes('paper')) {
+                badgeClass = 'bg-primary';
+            } else if (type.toLowerCase().includes('plastic')) {
+                badgeClass = 'bg-success';
+            } else if (type.toLowerCase().includes('glass')) {
+                badgeClass = 'bg-info';
+            } else if (type.toLowerCase().includes('metal')) {
+                badgeClass = 'bg-dark';
+            } else if (type.toLowerCase().includes('electronics')) {
+                badgeClass = 'bg-danger';
+            } else if (type.toLowerCase().includes('batteries')) {
+                badgeClass = 'bg-warning text-dark';
+            }
+            
+            typesHTML += `<span class="badge ${badgeClass} me-2 mb-2">${type}</span>`;
+        });
+        document.getElementById('centerAcceptedTypes').innerHTML = typesHTML;
+        
+        // Format hours
+        let hoursHTML = '<ul class="list-group list-group-flush">';
+        for (const [day, hours] of Object.entries(center.hours)) {
+            hoursHTML += `<li class="list-group-item d-flex justify-content-between p-2">
+                <span>${day}</span>
+                <span>${hours}</span>
+            </li>`;
+        }
+        hoursHTML += '</ul>';
+        document.getElementById('centerHours').innerHTML = hoursHTML;
+        
+        document.getElementById('centerDistance').textContent = `${center.distance} from your location`;
+        
+        // Set up direction links
+        document.getElementById('centerDirections').href = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(center.address)}`;
+        document.getElementById('centerWebsite').href = center.website;
+        
+        // Show the modal
+        const modal = new bootstrap.Modal(document.getElementById('centerDetailsModal'));
+        modal.show();
+    }
+    
+    // Initialize the map when the page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        initMap();
+        
+        // Set up event listeners
+        document.getElementById('getUserLocationBtn').addEventListener('click', function() {
+            // This would normally get the user's location using the Geolocation API
+            simulateMapExperience();
+        });
+    });
+</script>
 {% endblock %}

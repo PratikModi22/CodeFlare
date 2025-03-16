@@ -1,267 +1,219 @@
-{% extends 'layout.html' %}
+{% extends "layout.html" %}
 
-{% block title %}Analytics Dashboard - EcoTrack{% endblock %}
+{% block title %}Analytics Dashboard - EcoWaste{% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <h1><i class="fas fa-chart-bar me-2 text-primary"></i>Analytics Dashboard</h1>
-    <p class="lead">Track your waste disposal trends and environmental impact.</p>
-</div>
+<div class="container py-5">
+    <div class="row mb-4">
+        <div class="col-md-8 offset-md-2">
+            <h1 class="text-center mb-4">Your Sustainability Analytics</h1>
+            <p class="text-center mb-4">Track your waste disposal habits, environmental impact, and progress over time.</p>
+        </div>
+    </div>
 
-<div id="analytics-alerts"></div>
-
-<div class="mb-4 text-end">
-    <button id="refresh-btn" class="btn btn-outline-info">
-        <i class="fas fa-sync-alt me-2"></i>Refresh Data
-    </button>
-</div>
-
-<div class="row mb-4" id="analytics-summary">
-    <div class="col-md-3 mb-3">
-        <div class="card text-center h-100">
-            <div class="card-body">
-                <i class="fas fa-camera text-info fa-3x mb-3"></i>
-                <h3>{{ user_waste_logs }}</h3>
-                <p class="text-muted">Waste Items Classified</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3 mb-3">
-        <div class="card text-center h-100">
-            <div class="card-body">
-                <i class="fas fa-recycle text-success fa-3x mb-3"></i>
-                <h3>{{ user_recycling|length }}</h3>
-                <p class="text-muted">Recycling Activities</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3 mb-3">
-        <div class="card text-center h-100">
-            <div class="card-body">
-                <i class="fas fa-trophy text-warning fa-3x mb-3"></i>
-                <h3>{{ total_points }}</h3>
-                <p class="text-muted">Total Points Earned</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3 mb-3">
-        <div class="card text-center h-100">
-            <div class="card-body">
-                <i class="fas fa-leaf text-success fa-3x mb-3"></i>
-                <h3>{{ total_carbon_saved|round(2) }}</h3>
-                <p class="text-muted">kg CO2 Saved</p>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-md-6 mb-4">
-        <div class="card h-100" id="waste-distribution-container">
-            <div class="card-header bg-dark">
-                <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Waste Type Distribution</h5>
-            </div>
-            <div class="card-body">
-                {% if waste_types %}
-                <!-- Hidden data for chart -->
-                {% for waste_type, count in waste_types.items() %}
-                <div class="waste-type-item d-none" data-type="{{ waste_type }}" data-count="{{ count }}"></div>
-                {% endfor %}
-                
-                <canvas id="waste-distribution-chart" height="300"></canvas>
-                {% else %}
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle me-2"></i>No waste data available yet. Start classifying waste to see your distribution.
-                </div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-6 mb-4">
-        <div class="card h-100" id="carbon-savings-container">
-            <div class="card-header bg-dark">
-                <h5 class="mb-0"><i class="fas fa-leaf me-2"></i>Carbon Savings (Last 7 Days)</h5>
-            </div>
-            <div class="card-body">
-                {% if carbon_data %}
-                <!-- Hidden data for chart -->
-                {% for data in carbon_data %}
-                <div class="carbon-data-item d-none" data-date="{{ data.date }}" data-carbon="{{ data.carbon_saved }}"></div>
-                {% endfor %}
-                
-                <canvas id="carbon-savings-chart" height="300"></canvas>
-                {% else %}
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle me-2"></i>No carbon savings data available yet. Start recycling to track your impact.
-                </div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="card mb-4" id="leaderboard-container">
-    <div class="card-header bg-dark">
-        <h5 class="mb-0"><i class="fas fa-trophy me-2"></i>Leaderboard</h5>
-    </div>
-    <div class="card-body">
-        <ul class="nav nav-pills mb-3" id="leaderboardTab" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="points-tab" data-bs-toggle="pill" data-bs-target="#points-leaderboard" type="button" role="tab" aria-controls="points-leaderboard" aria-selected="true" data-leaderboard="points">
-                    <i class="fas fa-star me-1"></i> Points
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="carbon-tab" data-bs-toggle="pill" data-bs-target="#carbon-leaderboard" type="button" role="tab" aria-controls="carbon-leaderboard" aria-selected="false" data-leaderboard="carbon">
-                    <i class="fas fa-leaf me-1"></i> Carbon Saved
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="recycling-tab" data-bs-toggle="pill" data-bs-target="#recycling-leaderboard" type="button" role="tab" aria-controls="recycling-leaderboard" aria-selected="false" data-leaderboard="recycling">
-                    <i class="fas fa-recycle me-1"></i> Recycling Count
-                </button>
-            </li>
-        </ul>
-        
-        <div class="tab-content" id="leaderboardTabContent">
-            <div class="tab-pane fade show active" id="points-leaderboard" role="tabpanel" aria-labelledby="points-tab">
-                {% if leaderboard %}
-                <!-- Hidden data for chart -->
-                {% for user in leaderboard %}
-                <div class="leaderboard-item d-none" 
-                     data-username="{{ user.username }}" 
-                     data-points="{{ user.points }}"
-                     data-avatar=""
-                     {% if user.id == current_user.id %}data-is-current-user="true"{% endif %}>
-                </div>
-                {% endfor %}
-                
-                <div class="row">
-                    <div class="col-md-4">
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead>
-                                    <tr>
-                                        <th scope="col">Rank</th>
-                                        <th scope="col">User</th>
-                                        <th scope="col">Points</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for user in leaderboard %}
-                                    <tr {% if user.id == current_user.id %}class="table-primary"{% endif %}>
-                                        <td class="text-center">
-                                            {% if loop.index == 1 %}
-                                            <div class="position-medal gold"><i class="fas fa-medal"></i></div>
-                                            {% elif loop.index == 2 %}
-                                            <div class="position-medal silver"><i class="fas fa-medal"></i></div>
-                                            {% elif loop.index == 3 %}
-                                            <div class="position-medal bronze"><i class="fas fa-medal"></i></div>
-                                            {% else %}
-                                            {{ loop.index }}
-                                            {% endif %}
-                                        </td>
-                                        <td>{{ user.username }}</td>
-                                        <td>
-                                            <span class="badge bg-success rounded-pill">
-                                                <i class="fas fa-trophy"></i> {{ user.points }}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
+    <!-- Summary Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card bg-dark text-white metric-card">
+                <div class="card-body text-center">
+                    <div class="metric-icon">
+                        <i class="fas fa-recycle text-success"></i>
                     </div>
-                    <div class="col-md-8">
-                        <canvas id="leaderboard-chart" height="300"></canvas>
+                    <h5 class="card-title">Total Classifications</h5>
+                    <h3 id="total-classifications" class="mb-0">{{ total_classifications }}</h3>
+                    <p class="card-text mt-2">Waste items you've classified</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-dark text-white metric-card">
+                <div class="card-body text-center">
+                    <div class="metric-icon">
+                        <i class="fas fa-leaf text-info"></i>
+                    </div>
+                    <h5 class="card-title">Carbon Saved</h5>
+                    <h3 id="total-carbon-saved" data-carbon="{{ total_carbon_saved }}" class="mb-0">{{ total_carbon_saved|round(2) }} kg</h3>
+                    <p class="card-text mt-2">CO₂ emissions prevented</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-dark text-white metric-card">
+                <div class="card-body text-center">
+                    <div class="metric-icon">
+                        <i class="fas fa-trophy text-warning"></i>
+                    </div>
+                    <h5 class="card-title">Sustainability Rank</h5>
+                    <h3 class="mb-0">
+                        {% if current_user.points < 100 %}
+                            Beginner
+                        {% elif current_user.points < 500 %}
+                            Enthusiast
+                        {% elif current_user.points < 1000 %}
+                            Expert
+                        {% else %}
+                            Master
+                        {% endif %}
+                    </h3>
+                    <p class="card-text mt-2" id="user-points" data-points="{{ current_user.points }}">{{ current_user.points }} points</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Waste Distribution Chart -->
+        <div class="col-lg-6">
+            <div class="card bg-dark text-white h-100">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-pie me-2 text-primary"></i>Waste Distribution</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="waste-distribution-chart" data-distribution="{{ waste_distribution }}"></canvas>
+                    </div>
+                    <div class="mt-3">
+                        <h6>Key Insights:</h6>
+                        <ul>
+                            {% if waste_distribution %}
+                                {% set max_waste_type = waste_distribution.keys()|list|first %}
+                                {% set max_waste_count = waste_distribution.values()|list|first %}
+                                {% for waste_type, count in waste_distribution.items() %}
+                                    {% if count > max_waste_count %}
+                                        {% set max_waste_type = waste_type %}
+                                        {% set max_waste_count = count %}
+                                    {% endif %}
+                                {% endfor %}
+                                <li>Most common waste type: <strong class="text-{{ max_waste_type }}">{{ max_waste_type|capitalize }}</strong></li>
+                            {% else %}
+                                <li>No waste classification data available yet.</li>
+                            {% endif %}
+                            <li>Proper sorting increases recycling efficiency by up to 30%</li>
+                            <li>Contaminated recyclables often end up in landfills</li>
+                        </ul>
                     </div>
                 </div>
-                {% else %}
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle me-2"></i>No leaderboard data available yet.
-                </div>
-                {% endif %}
-            </div>
-            
-            <div class="tab-pane fade" id="carbon-leaderboard" role="tabpanel" aria-labelledby="carbon-tab">
-                <div class="text-center py-4">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <p class="mt-2">Loading carbon savings leaderboard...</p>
-                </div>
-            </div>
-            
-            <div class="tab-pane fade" id="recycling-leaderboard" role="tabpanel" aria-labelledby="recycling-tab">
-                <div class="text-center py-4">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <p class="mt-2">Loading recycling count leaderboard...</p>
-                </div>
             </div>
         </div>
-    </div>
-</div>
 
-<div class="row">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-header bg-dark">
-                <h5 class="mb-0"><i class="fas fa-tasks me-2"></i>Waste Management Metrics</h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-4 mb-3">
-                        <div class="card bg-dark h-100">
-                            <div class="card-body text-center">
-                                <h6 class="text-muted mb-3">Average Weekly Waste</h6>
-                                <h3 class="mb-0">{{ (user_waste_logs / 7)|round(1) }} items</h3>
-                                <div class="mt-3">
-                                    <div class="progress" style="height: 5px;">
-                                        <div class="progress-bar bg-info" role="progressbar" style="width: {{ min(100, (user_waste_logs / 7) * 10) }}%;" aria-valuenow="{{ (user_waste_logs / 7)|round(1) }}" aria-valuemin="0" aria-valuemax="10"></div>
+        <!-- Carbon Timeline Chart -->
+        <div class="col-lg-6">
+            <div class="card bg-dark text-white h-100">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-line me-2 text-success"></i>Carbon Savings Timeline</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="carbon-timeline-chart" data-timeline="{{ carbon_timeline }}"></canvas>
+                    </div>
+                    <div class="mt-3">
+                        <h6>Impact Equivalents:</h6>
+                        <div class="row g-3 mt-1">
+                            <div class="col-md-4">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-tree text-success me-2 fa-2x"></i>
+                                    <div>
+                                        <h6 class="mb-0"><span id="trees-equivalent">0.0</span></h6>
+                                        <small>Trees planted</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-car text-warning me-2 fa-2x"></i>
+                                    <div>
+                                        <h6 class="mb-0"><span id="car-miles-equivalent">0.0</span></h6>
+                                        <small>Car miles avoided</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-bolt text-info me-2 fa-2x"></i>
+                                    <div>
+                                        <h6 class="mb-0"><span id="energy-equivalent">0.0</span></h6>
+                                        <small>kWh of energy saved</small>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-4 mb-3">
-                        <div class="card bg-dark h-100">
-                            <div class="card-body text-center">
-                                <h6 class="text-muted mb-3">Recycling Rate</h6>
-                                {% set total_items = user_waste_logs %}
-                                {% set recycled_items = user_recycling|length %}
-                                {% if total_items > 0 %}
-                                    {% set recycling_rate = (recycled_items / total_items * 100)|round|int %}
-                                {% else %}
-                                    {% set recycling_rate = 0 %}
-                                {% endif %}
-                                <h3 class="mb-0">{{ recycling_rate }}%</h3>
-                                <div class="mt-3">
-                                    <div class="progress" style="height: 5px;">
-                                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ recycling_rate }}%;" aria-valuenow="{{ recycling_rate }}" aria-valuemin="0" aria-valuemax="100"></div>
-                                    </div>
-                                </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progress Toward Next Achievement -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card bg-dark text-white">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-award me-2 text-warning"></i>Progress Toward Next Achievement</h5>
+                </div>
+                <div class="card-body">
+                    <h6 class="mb-2">Next milestone: <span id="next-achievement-points">{{ ((current_user.points // 100) + 1) * 100 }}</span> points</h6>
+                    <div class="progress">
+                        <div id="achievement-progress" class="progress-bar bg-success progress-bar-striped progress-bar-animated" role="progressbar" 
+                            style="width: {{ current_user.points % 100 if current_user.points % 100 > 0 else 100 }}%;" 
+                            aria-valuenow="{{ current_user.points % 100 if current_user.points % 100 > 0 else 100 }}" 
+                            aria-valuemin="0" aria-valuemax="100">
+                            {{ current_user.points % 100 if current_user.points % 100 > 0 else 100 }}%
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between mt-3">
+                        <span>Current: {{ current_user.points }} points</span>
+                        <span>Target: {{ ((current_user.points // 100) + 1) * 100 }} points</span>
+                    </div>
+                    
+                    <div class="row mt-4">
+                        <div class="col-md-8">
+                            <h6>How to earn more points:</h6>
+                            <ul>
+                                <li>Classify waste items (+10 points each)</li>
+                                <li>Maintain a daily streak (+5 points per day)</li>
+                                <li>Reach carbon savings milestones (+20 points per kg)</li>
+                                <li>Refer friends to EcoWaste (+50 points per referral)</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <div class="d-grid gap-2">
+                                <button onclick="exportAnalyticsData()" class="btn btn-outline-info">
+                                    <i class="fas fa-download me-2"></i>Export Data
+                                </button>
+                                <button onclick="shareAnalytics()" class="btn btn-outline-success">
+                                    <i class="fas fa-share-alt me-2"></i>Share Your Impact
+                                </button>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-4 mb-3">
-                        <div class="card bg-dark h-100">
-                            <div class="card-body text-center">
-                                <h6 class="text-muted mb-3">Points per Item</h6>
-                                {% if total_items > 0 %}
-                                    {% set points_per_item = (total_points / total_items)|round|int %}
-                                {% else %}
-                                    {% set points_per_item = 0 %}
-                                {% endif %}
-                                <h3 class="mb-0">{{ points_per_item }}</h3>
-                                <div class="mt-3">
-                                    <div class="progress" style="height: 5px;">
-                                        <div class="progress-bar bg-warning" role="progressbar" style="width: {{ min(100, points_per_item * 5) }}%;" aria-valuenow="{{ points_per_item }}" aria-valuemin="0" aria-valuemax="20"></div>
-                                    </div>
-                                </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SDG Information -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card bg-dark border-secondary">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-globe-americas me-2 text-primary"></i>Your Contribution to UN Sustainable Development Goals</h5>
+                    <div class="row mt-3">
+                        <div class="col-md-4 mb-3">
+                            <div class="d-flex">
+                                <span class="sdg-badge sdg-11">SDG 11</span>
+                                <span class="ms-2">Your proper waste disposal contributes to sustainable cities and communities.</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="d-flex">
+                                <span class="sdg-badge sdg-12">SDG 12</span>
+                                <span class="ms-2">You've helped promote responsible consumption through proper recycling.</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="d-flex">
+                                <span class="sdg-badge sdg-13">SDG 13</span>
+                                <span class="ms-2">Your carbon savings directly contribute to climate action goals.</span>
                             </div>
                         </div>
                     </div>
@@ -274,5 +226,4 @@
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/analytics.js') }}"></script>
-<script src="{{ url_for('static', filename='js/gamification.js') }}"></script>
 {% endblock %}
