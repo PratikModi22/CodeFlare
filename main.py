@@ -5,7 +5,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user, login_required
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
-
+from app import app
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080)  # Required for Render
