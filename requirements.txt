@@ -11,5 +11,5 @@ requests>=2.32.3
 pillow>=11.1.0
 python-dotenv>=1.0.1
 google-cloud-vision>=3.4.0
-google-maps-services>=2.0.1
+googlemaps>=4.10.0
 firebase-admin>=6.2.0
