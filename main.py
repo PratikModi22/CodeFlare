@@ -6,6 +6,9 @@ from flask_login import LoginManager, UserMixin, login_user, logout_user, curren
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=8080)  # Required for Render
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
