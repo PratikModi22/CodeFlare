@@ -2,7 +2,6 @@
 # ♻️ EcoRecycle - AI-Powered E-Waste Management
 
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
-[![Google Cloud](https://img.shields.io/badge/Google%20Cloud-Deployed-blue.svg)](https://cloud.google.com)
 [![SDG 12](https://img.shields.io/badge/UN%20SDG-12-yellowgreen)](https://sdgs.un.org/goals/goal12)
 
 <div align="center">
